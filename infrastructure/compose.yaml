@@ -52,6 +52,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy
@@ -73,6 +74,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy
@@ -94,6 +96,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy
@@ -115,6 +118,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy
@@ -136,6 +140,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy
@@ -157,6 +162,7 @@ services:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
     depends_on:
       gateway:
         condition: service_healthy

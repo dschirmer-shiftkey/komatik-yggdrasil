@@ -2,6 +2,7 @@
   "name": "@komatik/seedling-gateway",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "OpenClaw Gateway for Yggdrasil Seedlings — agent orchestration, workflow engine, MCP tools",
   "main": "server.js",
   "scripts": {

@@ -2,6 +2,7 @@
   "name": "@komatik/seedling-scheduler",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Portable cycle loop manager for Yggdrasil Seedlings — replaces OS-level cron",
   "main": "index.js",
   "scripts": {
