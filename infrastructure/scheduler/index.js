@@ -8,9 +8,10 @@
  *   1. Dedup check — skip if a cycle is already running or recently completed
  *   2. Create a new workflow with steps for each agent role
  *   3. Poll for step completions and advance workflow status
- *   4. Handle failures with retry and circuit breaker
- *   5. Signal publisher when mission agent approves
- *   6. Wait for CYCLE_INTERVAL_MINUTES, then repeat
+ *   4. Retry failed steps up to MAX_STEP_RETRIES before giving up
+ *   5. Circuit breaker: abort workflow after MAX_WORKFLOW_FAILURES total failures
+ *   6. Signal publisher when mission agent approves
+ *   7. Wait for CYCLE_INTERVAL_MINUTES, then repeat
  *
  * Environment:
  *   GATEWAY_URL              — gateway HTTP endpoint
@@ -23,6 +24,8 @@ import { Pool } from "pg";
 const GATEWAY_URL = process.env.GATEWAY_URL || "http://gateway:18789";
 const CYCLE_INTERVAL_MS = parseInt(process.env.CYCLE_INTERVAL_MINUTES || "60", 10) * 60 * 1000;
 const STEP_POLL_INTERVAL_MS = 15_000;
+const MAX_STEP_RETRIES = 2;
+const MAX_WORKFLOW_FAILURES = 5;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -31,7 +34,7 @@ const CYCLE_STEPS = [
   { agent_id: "analysis",      task: "Model the research findings. Identify patterns, quantify impact, rank approaches by feasibility." },
   { agent_id: "prototype",     task: "Build proof-of-concepts from the top-ranked analysis recommendations." },
   { agent_id: "documentation", task: "Structure all outputs for public readability. Update FINDINGS.md with this cycle's discoveries." },
-  { agent_id: "mission",       task: "Review all cycle outputs against MISSION.md. Approve for publication or return with feedback." },
+  { agent_id: "mission",       task: "Review all cycle outputs against MISSION.md. Approve for publication or return with feedback. You MUST include a JSON block with {\"approved\": true} or {\"approved\": false, \"reason\": \"...\"} in your response." },
   { agent_id: "community",     task: "Triage any external contributions received since last cycle. Route quality inputs to appropriate agents." },
 ];
 
@@ -53,10 +56,10 @@ async function waitForGateway(maxRetries = 60, intervalMs = 5000) {
 
 async function shouldStartNewCycle() {
   const running = await pool.query(
-    "SELECT id, name FROM workflows WHERE status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1"
+    "SELECT id, name, status FROM workflows WHERE status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1"
   );
   if (running.rows.length > 0) {
-    console.log(`[scheduler] Skipping — workflow '${running.rows[0].name}' is still ${running.rows[0].id ? "active" : "pending"}`);
+    console.log(`[scheduler] Skipping — workflow '${running.rows[0].name}' is still ${running.rows[0].status}`);
     return false;
   }
 
@@ -111,25 +114,50 @@ async function createCycleWorkflow() {
   return workflowId;
 }
 
+// ── Step retry logic ────────────────────────────────────────────────────
+
+async function retryFailedStep(stepId, workflowId) {
+  const step = await pool.query("SELECT * FROM workflow_steps WHERE id = $1", [stepId]);
+  if (!step.rows[0]) return false;
+
+  const retryCount = step.rows[0].output?.retry_count || 0;
+  if (retryCount >= MAX_STEP_RETRIES) {
+    console.log(`[scheduler] Step ${stepId} (${step.rows[0].agent_id}) exhausted ${MAX_STEP_RETRIES} retries`);
+    return false;
+  }
+
+  console.log(`[scheduler] Retrying step ${stepId} (${step.rows[0].agent_id}), attempt ${retryCount + 1}/${MAX_STEP_RETRIES}`);
+  await pool.query(
+    `UPDATE workflow_steps
+     SET status = 'pending', started_at = NULL, completed_at = NULL,
+         output = jsonb_build_object('retry_count', $1::int, 'last_error', output->'error')
+     WHERE id = $2`,
+    [retryCount + 1, stepId]
+  );
+
+  return true;
+}
+
 // ── Orchestration loop ──────────────────────────────────────────────────
 
 async function monitorWorkflow(workflowId) {
   const startTime = Date.now();
-  const MAX_WORKFLOW_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+  const MAX_WORKFLOW_DURATION_MS = 4 * 60 * 60 * 1000;
+  let totalFailures = 0;
 
   while (true) {
     const steps = await pool.query(
-      "SELECT id, agent_id, task, status, step_order FROM workflow_steps WHERE workflow_id = $1 ORDER BY step_order",
+      "SELECT id, agent_id, task, status, step_order, output FROM workflow_steps WHERE workflow_id = $1 ORDER BY step_order",
       [workflowId]
     );
 
     const completed = steps.rows.filter((s) => s.status === "completed").length;
-    const failed = steps.rows.filter((s) => s.status === "failed").length;
+    const failed = steps.rows.filter((s) => s.status === "failed");
     const running = steps.rows.filter((s) => s.status === "running").length;
     const total = steps.rows.length;
 
     console.log(
-      `[scheduler] Workflow ${workflowId}: ${completed}/${total} completed, ${running} running, ${failed} failed`
+      `[scheduler] Workflow ${workflowId}: ${completed}/${total} completed, ${running} running, ${failed.length} failed`
     );
 
     if (completed === total) {
@@ -146,15 +174,34 @@ async function monitorWorkflow(workflowId) {
       return "completed";
     }
 
-    if (failed > 0) {
-      const failedSteps = steps.rows.filter((s) => s.status === "failed");
-      console.error(`[scheduler] Workflow ${workflowId} has ${failed} failed step(s): ${failedSteps.map((s) => s.agent_id).join(", ")}`);
+    if (failed.length > 0) {
+      let allExhausted = true;
+      for (const failedStep of failed) {
+        const retried = await retryFailedStep(failedStep.id, workflowId);
+        if (retried) {
+          allExhausted = false;
+        }
+        totalFailures++;
+      }
 
-      await pool.query(
-        "UPDATE workflows SET status = 'failed', updated_at = now(), result = $1 WHERE id = $2",
-        [JSON.stringify({ failed_steps: failedSteps.map((s) => s.agent_id), failed_at: new Date().toISOString() }), workflowId]
-      );
-      return "failed";
+      if (totalFailures >= MAX_WORKFLOW_FAILURES) {
+        console.error(`[scheduler] Circuit breaker: ${totalFailures} total failures in workflow — aborting`);
+        await pool.query(
+          "UPDATE workflows SET status = 'failed', updated_at = now(), result = $1 WHERE id = $2",
+          [JSON.stringify({ circuit_breaker: true, total_failures: totalFailures }), workflowId]
+        );
+        return "circuit_breaker";
+      }
+
+      if (allExhausted) {
+        const agents = failed.map((s) => s.agent_id).join(", ");
+        console.error(`[scheduler] Workflow ${workflowId} failed — steps exhausted retries: ${agents}`);
+        await pool.query(
+          "UPDATE workflows SET status = 'failed', updated_at = now(), result = $1 WHERE id = $2",
+          [JSON.stringify({ failed_steps: failed.map((s) => s.agent_id), failed_at: new Date().toISOString() }), workflowId]
+        );
+        return "failed";
+      }
     }
 
     if (Date.now() - startTime > MAX_WORKFLOW_DURATION_MS) {
@@ -172,6 +219,27 @@ async function monitorWorkflow(workflowId) {
 
 // ── Publisher signaling ─────────────────────────────────────────────────
 
+function parseMissionApproval(output) {
+  if (!output) return false;
+
+  const text = typeof output === "string" ? output : JSON.stringify(output);
+
+  const jsonMatch = text.match(/\{\s*"approved"\s*:\s*(true|false)[^}]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.approved === true;
+    } catch {}
+  }
+
+  const content = (output.content || text).toLowerCase();
+  if (content.includes("approved for publication") || content.includes("approve for publication")) return true;
+  if (content.includes("publication approved")) return true;
+  if (content.includes("not approved") || content.includes("do not approve")) return false;
+
+  return true;
+}
+
 async function signalPublisher(workflowId, missionStepId) {
   const missionOutput = await pool.query(
     "SELECT output FROM workflow_steps WHERE id = $1",
@@ -179,7 +247,7 @@ async function signalPublisher(workflowId, missionStepId) {
   );
 
   const output = missionOutput.rows[0]?.output;
-  const approved = output && !JSON.stringify(output).toLowerCase().includes("rejected");
+  const approved = parseMissionApproval(output);
 
   if (approved) {
     await pool.query(
@@ -189,6 +257,11 @@ async function signalPublisher(workflowId, missionStepId) {
     );
     console.log(`[scheduler] Publication approved — signaled publisher`);
   } else {
+    await pool.query(
+      `INSERT INTO agent_messages (from_agent, to_agent, subject, body)
+       VALUES ('scheduler', 'publisher', 'publish_rejected', $1)`,
+      [JSON.stringify({ workflow_id: workflowId, reason: "Mission agent did not approve" })]
+    );
     console.log(`[scheduler] Mission agent did not approve — skipping publication`);
   }
 }

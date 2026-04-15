@@ -47,10 +47,24 @@ const BIFROST_URL = process.env.BIFROST_URL || "http://bifrost:8080";
 const BIFROST_API_KEY = process.env.BIFROST_API_KEY || "";
 const CONTEXT_BUDGET_PATH = path.join(WORKSPACE, "config", "context-budget.yaml");
 const AGENT_CONFIG_PATH = path.join(WORKSPACE, "config", "agent.yaml");
+const CAPACITY_CONFIG_PATH = path.join(WORKSPACE, "config", "agent-capacity.yaml");
 const OUTPUT_DIR = path.join(WORKSPACE, "output");
 
 const MAX_CONSECUTIVE_FAILURES = 5;
 const POLL_INTERVAL_MS = 30_000;
+
+function loadCapacityLimit() {
+  try {
+    if (!fs.existsSync(CAPACITY_CONFIG_PATH)) return 1;
+    const cfg = yaml.load(fs.readFileSync(CAPACITY_CONFIG_PATH, "utf-8")) || {};
+    const override = cfg.overrides?.[ROLE]?.max_concurrent_steps;
+    return override ?? cfg.defaults?.max_concurrent_steps ?? 1;
+  } catch {
+    return 1;
+  }
+}
+
+const MAX_CONCURRENT_STEPS = loadCapacityLimit();
 
 if (!ROLE) {
   console.error("[agent] AGENT_ROLE is required");
@@ -143,6 +157,12 @@ async function recordRun(jobName, status, summary, tokensUsed, costUsd, duration
 // ── Atomic workflow step management ─────────────────────────────────────
 
 async function claimNextStep() {
+  const runningCount = await pool.query(
+    "SELECT COUNT(*) FROM workflow_steps WHERE agent_id = $1 AND status = 'running'",
+    [AGENT_ID]
+  );
+  if (parseInt(runningCount.rows[0].count) >= MAX_CONCURRENT_STEPS) return null;
+
   const result = await pool.query(
     `UPDATE workflow_steps
      SET status = 'running', started_at = now()
@@ -241,22 +261,25 @@ function writeArtifact(stepTask, content) {
 
 // ── Bifrost LLM integration ────────────────────────────────────────────
 
-async function callBifrost(systemPrompt, userPrompt) {
+async function callBifrost(systemPrompt, userPrompt, opts = {}) {
   const headers = { "Content-Type": "application/json" };
   if (BIFROST_API_KEY) {
     headers["Authorization"] = `Bearer ${BIFROST_API_KEY}`;
   }
 
+  const body = {
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    max_tokens: opts.maxTokens || 4096,
+  };
+  if (opts.model) body.model = opts.model;
+
   const res = await fetch(`${BIFROST_URL}/v1/chat/completions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 4096,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -277,7 +300,7 @@ async function callBifrost(systemPrompt, userPrompt) {
 
 // ── Step execution ──────────────────────────────────────────────────────
 
-async function executeStep(step, systemPrompt, sessionContext) {
+async function executeStep(step, systemPrompt, sessionContext, llmOpts = {}) {
   const userPrompt = [
     "# Your Current Task\n",
     `**Workflow**: ${step.workflow_name}`,
@@ -295,7 +318,7 @@ async function executeStep(step, systemPrompt, sessionContext) {
     .join("\n");
 
   const startTime = Date.now();
-  const response = await callBifrost(systemPrompt, userPrompt);
+  const response = await callBifrost(systemPrompt, userPrompt, llmOpts);
   const durationSeconds = Math.round((Date.now() - startTime) / 1000);
   const totalTokens = response.inputTokens + response.outputTokens;
 
@@ -339,8 +362,9 @@ async function executeStep(step, systemPrompt, sessionContext) {
 
 // ── Agent loop ──────────────────────────────────────────────────────────
 
-async function agentLoop(sessionId, soul, mission, sessionContext) {
-  const systemPrompt = [soul, "\n---\n", mission].join("");
+async function agentLoop(sessionId, soul, mission, sessionContext, agentConfig) {
+  const configPrompt = agentConfig.system_prompt || "";
+  const systemPrompt = [soul, "\n---\n", mission, configPrompt ? "\n---\n" + configPrompt : ""].join("");
   let context = sessionContext;
   let consecutiveFailures = 0;
 
@@ -355,7 +379,11 @@ async function agentLoop(sessionId, soul, mission, sessionContext) {
     console.log(`[agent:${ROLE}] Claimed step: ${step.task.slice(0, 80)}`);
 
     try {
-      const result = await executeStep(step, systemPrompt, context);
+      const llmOpts = {
+        model: agentConfig.preferred_model,
+        maxTokens: agentConfig.max_tokens_per_session,
+      };
+      const result = await executeStep(step, systemPrompt, context, llmOpts);
 
       await completeStep(step.id, { content: result.content });
 
@@ -442,7 +470,7 @@ async function main() {
     process.exit(0);
   });
 
-  await agentLoop(sessionId, soul, mission, sessionContext);
+  await agentLoop(sessionId, soul, mission, sessionContext, agentConfig);
 }
 
 main().catch(async (err) => {

@@ -32,7 +32,9 @@ const SEEDLING_DIR = process.env.SEEDLING_DIR || "seedlings/unknown";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
 const GITHUB_REPO = process.env.GITHUB_REPO || "";
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
-const BIFROST_METRICS_URL = process.env.BIFROST_METRICS_URL || "http://bifrost:9090/metrics";
+// Token usage is sourced from the DB (llm_usage table), not Bifrost metrics.
+// Bifrost metrics scraping was removed because the publisher and Bifrost are
+// on isolated Docker networks — the DB is the single source of truth.
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -158,16 +160,6 @@ async function publishToGithub(artifacts) {
 
 // ── TOKENS.md generation ────────────────────────────────────────────────
 
-async function fetchBifrostMetrics() {
-  try {
-    const res = await fetch(BIFROST_METRICS_URL);
-    if (!res.ok) return null;
-    return await res.text();
-  } catch {
-    return null;
-  }
-}
-
 async function getDbTokenSummary() {
   const result = await pool.query(`
     SELECT
@@ -254,13 +246,7 @@ async function publishCycle() {
     return;
   }
 
-  const pushed = await publishToGithub(validated);
-  if (pushed) {
-    const bifrostMetrics = await fetchBifrostMetrics();
-    if (bifrostMetrics) {
-      console.log(`[publisher] Bifrost metrics snapshot captured (${bifrostMetrics.length} bytes)`);
-    }
-  }
+  await publishToGithub(validated);
 }
 
 // ── Main ────────────────────────────────────────────────────────────────

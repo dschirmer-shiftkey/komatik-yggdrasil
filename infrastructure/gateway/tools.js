@@ -21,14 +21,14 @@ export async function register_identity(pool, { agent_id }) {
     return { error: `Agent '${agent_id}' not recognized in RBAC policies` };
   }
 
-  await pool.query(
+  const result = await pool.query(
     `INSERT INTO agent_sessions (agent_id, status, context)
      VALUES ($1, 'active', $2)
-     ON CONFLICT DO NOTHING`,
+     RETURNING id`,
     [agent_id, JSON.stringify({ role, registered: new Date().toISOString() })]
   );
 
-  return { agent_id, role, status: "registered" };
+  return { agent_id, role, session_id: result.rows[0].id, status: "registered" };
 }
 
 // ── Workflow ────────────────────────────────────────────────────────────
