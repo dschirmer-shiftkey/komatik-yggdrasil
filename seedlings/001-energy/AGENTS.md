@@ -16,6 +16,19 @@ knowledge areas:
 - Sub-Saharan African and Southeast Asian infrastructure constraints
 - Open-source hardware (OSHWA, OpenEnergyMonitor, LibreSolar)
 
+## Agent Configuration
+
+Each agent's behavior is tuned via `config/agents/<role>.yaml`, which provides:
+
+- **`system_prompt`** — domain-specific instructions prepended to the LLM system prompt
+  (appended after the soul file and mission file in the prompt chain)
+- **`preferred_model`** — passed to Bifrost for model routing (e.g., `claude-sonnet-4-20250514`)
+- **`max_tokens_per_session`** — per-request token ceiling for this agent
+- **`task_profiles`** — list of task types this agent handles
+
+These configs are mounted into the agent container at `/workspace/config/agent.yaml`
+via the compose override. Changes take effect on the next container restart.
+
 ## Role Adaptations
 
 ### Research Agent
@@ -47,6 +60,7 @@ knowledge areas:
 - Reject outputs that assume infrastructure not available in target regions
 - Ensure cost targets are met ($500/household for basic electrification)
 - Flag any commercial bias in technology recommendations
+- Respond with structured JSON approval: `{"approved": true}` or `{"approved": false, "reason": "..."}`
 
 ### Community Agent
 - Welcome contributions from energy access practitioners and researchers
