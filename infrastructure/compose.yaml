@@ -6,6 +6,23 @@
 #
 # Each Seedling extends this base with mission-specific overrides.
 
+x-agent-common: &agent-common
+  build:
+    context: ./agent
+    dockerfile: Dockerfile
+  depends_on:
+    gateway:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - agent-net
+    - backend-net  # direct DB access; migrate to gateway API in future
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+        cpus: "0.5"
+
 services:
   gateway:
     build:
@@ -16,17 +33,15 @@ services:
       - "${GATEWAY_PORT:-18789}:18789"
     environment:
       - WORKSPACE_PATH=/workspace
-      - REPOS_PATH=/workspace/output
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
-      - BIFROST_URL=http://bifrost:8080
       - NODE_ENV=production
     volumes:
       - workspace:/workspace
       - output:/workspace/output
+      - ./config/rbac-policies.yaml:/workspace/config/rbac-policies.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
     depends_on:
       db:
-        condition: service_healthy
-      bifrost:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:18789/health').then(r => process.exit(r.ok ? 0 : 1))"]
@@ -35,11 +50,17 @@ services:
       retries: 3
       start_period: 15s
     restart: unless-stopped
+    networks:
+      - backend-net
+      - agent-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
 
   agent-mission:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-mission
     environment:
       - AGENT_ROLE=mission
@@ -48,20 +69,15 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   agent-research:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-research
     environment:
       - AGENT_ROLE=research
@@ -70,20 +86,15 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   agent-analysis:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-analysis
     environment:
       - AGENT_ROLE=analysis
@@ -92,20 +103,15 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   agent-prototype:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-prototype
     environment:
       - AGENT_ROLE=prototype
@@ -114,20 +120,15 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   agent-documentation:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-documentation
     environment:
       - AGENT_ROLE=documentation
@@ -136,20 +137,15 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   agent-community:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
+    <<: *agent-common
     container_name: seedling-agent-community
     environment:
       - AGENT_ROLE=community
@@ -158,25 +154,28 @@ services:
       - WORKSPACE_PATH=/workspace
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEEDLING_VIRTUAL_KEY}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
-    depends_on:
-      gateway:
-        condition: service_healthy
-    restart: unless-stopped
 
   bifrost:
-    image: maximhq/bifrost:latest
+    build:
+      context: ./bifrost
+      dockerfile: Dockerfile
     container_name: seedling-bifrost
     ports:
       - "${BIFROST_PORT:-8080}:8080"
     volumes:
-      - ./bifrost/config.json:/app/config.json:ro
+      - ./bifrost/config.template.json:/app/config.template.json:ro
     environment:
       - CONFIG_PATH=/app/config.json
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SEEDLING_VIRTUAL_KEY=${SEEDLING_VIRTUAL_KEY}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 15s
@@ -184,6 +183,13 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - agent-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
 
   db:
     image: postgres:16-alpine
@@ -204,6 +210,13 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
   scheduler:
     build:
@@ -218,6 +231,13 @@ services:
       gateway:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
 
   publisher:
     build:
@@ -230,17 +250,22 @@ services:
       - GITHUB_BRANCH=${GITHUB_BRANCH:-main}
       - SEEDLING_NAME=${SEEDLING_NAME}
       - SEEDLING_DIR=${SEEDLING_DIR}
-      - BIFROST_METRICS_URL=http://bifrost:8080/metrics
+      - BIFROST_METRICS_URL=http://bifrost:9090/metrics
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - PUBLISH_INTERVAL_MINUTES=${PUBLISH_INTERVAL_MINUTES:-30}
     volumes:
-      - output:/workspace/output:ro
+      - output:/workspace/output
     depends_on:
       gateway:
         condition: service_healthy
-      bifrost:
-        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
 
 volumes:
   pgdata:
@@ -251,3 +276,9 @@ volumes:
     driver: local
   mission:
     driver: local
+
+networks:
+  backend-net:
+    driver: bridge
+  agent-net:
+    driver: bridge

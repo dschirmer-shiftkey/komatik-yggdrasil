@@ -10,7 +10,6 @@ services:
   agent-mission:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/mission.md:/workspace/souls/mission.md:ro
@@ -19,7 +18,6 @@ services:
   agent-research:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/research.md:/workspace/souls/research.md:ro
@@ -28,7 +26,6 @@ services:
   agent-analysis:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/analysis.md:/workspace/souls/analysis.md:ro
@@ -37,7 +34,6 @@ services:
   agent-prototype:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/prototype.md:/workspace/souls/prototype.md:ro
@@ -46,7 +42,6 @@ services:
   agent-documentation:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/documentation.md:/workspace/souls/documentation.md:ro
@@ -55,7 +50,6 @@ services:
   agent-community:
     environment:
       - SEEDLING_NAME=Energy
-      - SEEDLING_ID=001-energy
     volumes:
       - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
       - ../../infrastructure/agent/souls/community.md:/workspace/souls/community.md:ro
@@ -68,4 +62,4 @@ services:
 
   bifrost:
     volumes:
-      - ../../seedlings/001-energy/config/bifrost.json:/app/config.json:ro
+      - ../../seedlings/001-energy/config/bifrost.json:/app/config.template.json:ro

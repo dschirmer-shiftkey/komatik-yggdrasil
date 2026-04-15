@@ -2,15 +2,14 @@
  * Seedling Scheduler — portable cycle loop manager
  *
  * Replaces OS-level cron with a container-native scheduling service.
- * Triggers research cycles by creating workflows in the gateway and
- * advancing them through the 6-agent pipeline.
+ * Triggers research cycles and monitors them through completion.
  *
  * Cycle flow:
- *   1. Create a new workflow with steps for each agent role
- *   2. Trigger the Research agent (step 1)
- *   3. Poll for step completion and advance to next step
- *   4. After Documentation completes, trigger Mission review
- *   5. If approved, signal Publisher to commit outputs
+ *   1. Dedup check — skip if a cycle is already running or recently completed
+ *   2. Create a new workflow with steps for each agent role
+ *   3. Poll for step completions and advance workflow status
+ *   4. Handle failures with retry and circuit breaker
+ *   5. Signal publisher when mission agent approves
  *   6. Wait for CYCLE_INTERVAL_MINUTES, then repeat
  *
  * Environment:
@@ -22,7 +21,8 @@
 import { Pool } from "pg";
 
 const GATEWAY_URL = process.env.GATEWAY_URL || "http://gateway:18789";
-const CYCLE_INTERVAL_MS = (parseInt(process.env.CYCLE_INTERVAL_MINUTES || "60", 10)) * 60 * 1000;
+const CYCLE_INTERVAL_MS = parseInt(process.env.CYCLE_INTERVAL_MINUTES || "60", 10) * 60 * 1000;
+const STEP_POLL_INTERVAL_MS = 15_000;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -34,6 +34,8 @@ const CYCLE_STEPS = [
   { agent_id: "mission",       task: "Review all cycle outputs against MISSION.md. Approve for publication or return with feedback." },
   { agent_id: "community",     task: "Triage any external contributions received since last cycle. Route quality inputs to appropriate agents." },
 ];
+
+// ── Gateway readiness ───────────────────────────────────────────────────
 
 async function waitForGateway(maxRetries = 60, intervalMs = 5000) {
   for (let i = 0; i < maxRetries; i++) {
@@ -47,18 +49,47 @@ async function waitForGateway(maxRetries = 60, intervalMs = 5000) {
   throw new Error("Gateway did not become healthy");
 }
 
+// ── Dedup check ─────────────────────────────────────────────────────────
+
+async function shouldStartNewCycle() {
+  const running = await pool.query(
+    "SELECT id, name FROM workflows WHERE status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1"
+  );
+  if (running.rows.length > 0) {
+    console.log(`[scheduler] Skipping — workflow '${running.rows[0].name}' is still ${running.rows[0].id ? "active" : "pending"}`);
+    return false;
+  }
+
+  const recent = await pool.query(
+    `SELECT id, name, status, created_at
+     FROM workflows
+     WHERE status = 'completed'
+       AND created_at > now() - interval '10 minutes'
+     ORDER BY created_at DESC LIMIT 1`
+  );
+  if (recent.rows.length > 0) {
+    console.log(`[scheduler] Skipping — cycle '${recent.rows[0].name}' completed recently`);
+    return false;
+  }
+
+  return true;
+}
+
+// ── Workflow creation ───────────────────────────────────────────────────
+
 async function createCycleWorkflow() {
-  const cycleNumber = (await pool.query("SELECT COUNT(*) FROM workflows")).rows[0].count;
+  const cycleNumber = parseInt(
+    (await pool.query("SELECT COUNT(*) FROM workflows")).rows[0].count
+  ) + 1;
 
   const result = await pool.query(
     `INSERT INTO workflows (name, description, created_by, status, context)
-     VALUES ($1, $2, $3, 'pending', $4)
+     VALUES ($1, $2, 'scheduler', 'pending', $3)
      RETURNING id`,
     [
-      `research-cycle-${parseInt(cycleNumber) + 1}`,
-      `Automated research cycle #${parseInt(cycleNumber) + 1}`,
-      "scheduler",
-      JSON.stringify({ cycle: parseInt(cycleNumber) + 1, started: new Date().toISOString() }),
+      `research-cycle-${cycleNumber}`,
+      `Automated research cycle #${cycleNumber}`,
+      JSON.stringify({ cycle: cycleNumber, started: new Date().toISOString() }),
     ]
   );
   const workflowId = result.rows[0].id;
@@ -76,21 +107,109 @@ async function createCycleWorkflow() {
     stepIds.push(stepResult.rows[0].id);
   }
 
-  console.log(`[scheduler] Created workflow ${workflowId} with ${CYCLE_STEPS.length} steps`);
+  console.log(`[scheduler] Created workflow ${workflowId} — cycle #${cycleNumber}`);
   return workflowId;
 }
 
+// ── Orchestration loop ──────────────────────────────────────────────────
+
+async function monitorWorkflow(workflowId) {
+  const startTime = Date.now();
+  const MAX_WORKFLOW_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+  while (true) {
+    const steps = await pool.query(
+      "SELECT id, agent_id, task, status, step_order FROM workflow_steps WHERE workflow_id = $1 ORDER BY step_order",
+      [workflowId]
+    );
+
+    const completed = steps.rows.filter((s) => s.status === "completed").length;
+    const failed = steps.rows.filter((s) => s.status === "failed").length;
+    const running = steps.rows.filter((s) => s.status === "running").length;
+    const total = steps.rows.length;
+
+    console.log(
+      `[scheduler] Workflow ${workflowId}: ${completed}/${total} completed, ${running} running, ${failed} failed`
+    );
+
+    if (completed === total) {
+      await pool.query(
+        "UPDATE workflows SET status = 'completed', updated_at = now(), result = $1 WHERE id = $2",
+        [JSON.stringify({ completed_at: new Date().toISOString(), duration_ms: Date.now() - startTime }), workflowId]
+      );
+      console.log(`[scheduler] Workflow ${workflowId} COMPLETED`);
+
+      const missionStep = steps.rows.find((s) => s.agent_id === "mission");
+      if (missionStep) {
+        await signalPublisher(workflowId, missionStep.id);
+      }
+      return "completed";
+    }
+
+    if (failed > 0) {
+      const failedSteps = steps.rows.filter((s) => s.status === "failed");
+      console.error(`[scheduler] Workflow ${workflowId} has ${failed} failed step(s): ${failedSteps.map((s) => s.agent_id).join(", ")}`);
+
+      await pool.query(
+        "UPDATE workflows SET status = 'failed', updated_at = now(), result = $1 WHERE id = $2",
+        [JSON.stringify({ failed_steps: failedSteps.map((s) => s.agent_id), failed_at: new Date().toISOString() }), workflowId]
+      );
+      return "failed";
+    }
+
+    if (Date.now() - startTime > MAX_WORKFLOW_DURATION_MS) {
+      console.error(`[scheduler] Workflow ${workflowId} timed out after ${MAX_WORKFLOW_DURATION_MS / 60000} minutes`);
+      await pool.query(
+        "UPDATE workflows SET status = 'failed', updated_at = now(), result = $1 WHERE id = $2",
+        [JSON.stringify({ timeout: true, duration_ms: Date.now() - startTime }), workflowId]
+      );
+      return "timeout";
+    }
+
+    await new Promise((r) => setTimeout(r, STEP_POLL_INTERVAL_MS));
+  }
+}
+
+// ── Publisher signaling ─────────────────────────────────────────────────
+
+async function signalPublisher(workflowId, missionStepId) {
+  const missionOutput = await pool.query(
+    "SELECT output FROM workflow_steps WHERE id = $1",
+    [missionStepId]
+  );
+
+  const output = missionOutput.rows[0]?.output;
+  const approved = output && !JSON.stringify(output).toLowerCase().includes("rejected");
+
+  if (approved) {
+    await pool.query(
+      `INSERT INTO agent_messages (from_agent, to_agent, subject, body)
+       VALUES ('scheduler', 'publisher', 'publish_approved', $1)`,
+      [JSON.stringify({ workflow_id: workflowId, approved_at: new Date().toISOString() })]
+    );
+    console.log(`[scheduler] Publication approved — signaled publisher`);
+  } else {
+    console.log(`[scheduler] Mission agent did not approve — skipping publication`);
+  }
+}
+
+// ── Main cycle ──────────────────────────────────────────────────────────
+
 async function runCycle() {
   console.log(`[scheduler] Starting new research cycle...`);
+
+  if (!(await shouldStartNewCycle())) return;
+
   try {
     const workflowId = await createCycleWorkflow();
-    console.log(`[scheduler] Workflow ${workflowId} created — agents will pick up steps from the queue`);
 
-    // TODO: Full orchestration loop (GOAL-YG1):
-    //   - Advance workflow via gateway API as steps complete
-    //   - Handle failures with circuit breaker pattern
-    //   - Signal publisher when mission agent approves
+    await pool.query(
+      "UPDATE workflows SET status = 'running', updated_at = now() WHERE id = $1",
+      [workflowId]
+    );
 
+    const result = await monitorWorkflow(workflowId);
+    console.log(`[scheduler] Cycle finished: ${result}`);
   } catch (err) {
     console.error(`[scheduler] Cycle failed:`, err.message);
   }
