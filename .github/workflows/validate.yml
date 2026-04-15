@@ -1,0 +1,83 @@
+name: Validate Seedling Structure
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Seedling Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required root files
+        run: |
+          MISSING=0
+          for f in README.md LICENSE LICENSE-CC-BY-4.0 CONTRIBUTING.md AGENTS.md; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error::Missing required root file: $f"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [[ $MISSING -gt 0 ]]; then
+            echo "::error::$MISSING required root files missing"
+            exit 1
+          fi
+          echo "All required root files present"
+
+      - name: Validate Seedling directories
+        run: |
+          ERRORS=0
+          for dir in seedlings/*/; do
+            name=$(basename "$dir")
+            echo "::group::Validating $name"
+
+            if [[ ! -f "$dir/MISSION.md" ]]; then
+              echo "::error::$name missing MISSION.md"
+              ERRORS=$((ERRORS + 1))
+            else
+              lines=$(wc -l < "$dir/MISSION.md")
+              if [[ $lines -lt 5 ]]; then
+                echo "::warning::$name MISSION.md has only $lines lines — may be a placeholder"
+              fi
+            fi
+
+            if [[ ! -f "$dir/TOKENS.md" ]]; then
+              echo "::error::$name missing TOKENS.md"
+              ERRORS=$((ERRORS + 1))
+            fi
+
+            if [[ ! -f "$dir/FINDINGS.md" ]]; then
+              echo "::warning::$name missing FINDINGS.md"
+            fi
+
+            for subdir in RESEARCH MODELS PROTOTYPES; do
+              if [[ ! -d "$dir/$subdir" ]]; then
+                echo "::warning::$name missing $subdir/ directory"
+              fi
+            done
+
+            echo "::endgroup::"
+          done
+
+          if [[ $ERRORS -gt 0 ]]; then
+            echo "::error::$ERRORS validation errors found"
+            exit 1
+          fi
+          echo "All Seedlings validated"
+
+      - name: Validate TOKENS.md format
+        run: |
+          for tokens_file in seedlings/*/TOKENS.md; do
+            [[ ! -f "$tokens_file" ]] && continue
+            seedling=$(basename "$(dirname "$tokens_file")")
+            echo "Checking $seedling/TOKENS.md..."
+
+            if ! head -1 "$tokens_file" | grep -q "^# "; then
+              echo "::warning::$seedling/TOKENS.md missing markdown header"
+            fi
+          done
+          echo "TOKENS.md format check complete"

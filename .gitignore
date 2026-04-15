@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# Bifrost runtime config (contains API keys)
+infrastructure/bifrost/config.json
+
+# Agent runtime state
+context/.circuit-breaker/

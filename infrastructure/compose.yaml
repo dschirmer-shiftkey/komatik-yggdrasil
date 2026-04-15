@@ -1,0 +1,247 @@
+# Yggdrasil Seedling — Docker Compose Template
+#
+# Boots a fully operational Seedling with one command:
+#   docker compose -f infrastructure/compose.yaml \
+#     -f seedlings/001-energy/config/compose.override.yaml up
+#
+# Each Seedling extends this base with mission-specific overrides.
+
+services:
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: seedling-gateway
+    ports:
+      - "${GATEWAY_PORT:-18789}:18789"
+    environment:
+      - WORKSPACE_PATH=/workspace
+      - REPOS_PATH=/workspace/output
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+      - NODE_ENV=production
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+    depends_on:
+      db:
+        condition: service_healthy
+      bifrost:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:18789/health').then(r => process.exit(r.ok ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  agent-mission:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-mission
+    environment:
+      - AGENT_ROLE=mission
+      - AGENT_ID=mission
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-research:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-research
+    environment:
+      - AGENT_ROLE=research
+      - AGENT_ID=research
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-analysis:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-analysis
+    environment:
+      - AGENT_ROLE=analysis
+      - AGENT_ID=analysis
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-prototype:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-prototype
+    environment:
+      - AGENT_ROLE=prototype
+      - AGENT_ID=prototype
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-documentation:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-documentation
+    environment:
+      - AGENT_ROLE=documentation
+      - AGENT_ID=documentation
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-community:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: seedling-agent-community
+    environment:
+      - AGENT_ROLE=community
+      - AGENT_ID=community
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  bifrost:
+    image: maximhq/bifrost:latest
+    container_name: seedling-bifrost
+    ports:
+      - "${BIFROST_PORT:-8080}:8080"
+    volumes:
+      - ./bifrost/config.json:/app/config.json:ro
+    environment:
+      - CONFIG_PATH=/app/config.json
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: seedling-db
+    environment:
+      - POSTGRES_DB=seedling
+      - POSTGRES_USER=seedling
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./gateway/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seedling -d seedling"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    container_name: seedling-scheduler
+    environment:
+      - GATEWAY_URL=http://gateway:18789
+      - CYCLE_INTERVAL_MINUTES=${CYCLE_INTERVAL_MINUTES:-60}
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+
+  publisher:
+    build:
+      context: ./publisher
+      dockerfile: Dockerfile
+    container_name: seedling-publisher
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - GITHUB_BRANCH=${GITHUB_BRANCH:-main}
+      - SEEDLING_NAME=${SEEDLING_NAME}
+      - SEEDLING_DIR=${SEEDLING_DIR}
+      - BIFROST_METRICS_URL=http://bifrost:8080/metrics
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - PUBLISH_INTERVAL_MINUTES=${PUBLISH_INTERVAL_MINUTES:-30}
+    volumes:
+      - output:/workspace/output:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+      bifrost:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    driver: local
+  workspace:
+    driver: local
+  output:
+    driver: local
+  mission:
+    driver: local

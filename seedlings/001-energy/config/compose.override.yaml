@@ -1,0 +1,71 @@
+# Seedling 001: Energy — Docker Compose Override
+#
+# Extends the base infrastructure/compose.yaml with Energy-specific config.
+#
+# Usage:
+#   docker compose -f infrastructure/compose.yaml \
+#     -f seedlings/001-energy/config/compose.override.yaml up
+
+services:
+  agent-mission:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/mission.md:/workspace/souls/mission.md:ro
+      - ../../seedlings/001-energy/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
+
+  agent-research:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/research.md:/workspace/souls/research.md:ro
+      - ../../seedlings/001-energy/config/agents/research.yaml:/workspace/config/agent.yaml:ro
+
+  agent-analysis:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/analysis.md:/workspace/souls/analysis.md:ro
+      - ../../seedlings/001-energy/config/agents/analysis.yaml:/workspace/config/agent.yaml:ro
+
+  agent-prototype:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/prototype.md:/workspace/souls/prototype.md:ro
+      - ../../seedlings/001-energy/config/agents/prototype.yaml:/workspace/config/agent.yaml:ro
+
+  agent-documentation:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/documentation.md:/workspace/souls/documentation.md:ro
+      - ../../seedlings/001-energy/config/agents/documentation.yaml:/workspace/config/agent.yaml:ro
+
+  agent-community:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_ID=001-energy
+    volumes:
+      - ../../seedlings/001-energy/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/community.md:/workspace/souls/community.md:ro
+      - ../../seedlings/001-energy/config/agents/community.yaml:/workspace/config/agent.yaml:ro
+
+  publisher:
+    environment:
+      - SEEDLING_NAME=Energy
+      - SEEDLING_DIR=seedlings/001-energy
+
+  bifrost:
+    volumes:
+      - ../../seedlings/001-energy/config/bifrost.json:/app/config.json:ro

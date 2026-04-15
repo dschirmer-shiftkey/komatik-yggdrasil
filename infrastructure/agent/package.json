@@ -1,0 +1,18 @@
+{
+  "name": "@komatik/seedling-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent runner for Yggdrasil Seedlings — executes research cycles for a single agent role",
+  "main": "runner.js",
+  "scripts": {
+    "start": "node runner.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1",
+    "js-yaml": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

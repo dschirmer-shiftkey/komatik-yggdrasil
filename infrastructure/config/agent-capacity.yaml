@@ -1,0 +1,19 @@
+# Agent Capacity — per-role concurrency limits for workflow backpressure
+# Prevents any single agent from consuming too many resources
+
+defaults:
+  max_concurrent_steps: 1
+
+overrides:
+  mission:
+    max_concurrent_steps: 2
+  research:
+    max_concurrent_steps: 1
+  analysis:
+    max_concurrent_steps: 1
+  prototype:
+    max_concurrent_steps: 1
+  documentation:
+    max_concurrent_steps: 1
+  community:
+    max_concurrent_steps: 1

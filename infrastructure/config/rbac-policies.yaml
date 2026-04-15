@@ -1,0 +1,93 @@
+# RBAC Policies for Yggdrasil Seedlings
+# Adapted from komatik-agents/config/rbac-policies.yaml for the 6-role collective
+
+default_policy: deny_unspecified
+
+roles:
+  guardian:
+    description: "Mission guardian — full workflow control, review authority"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - create_workflow
+      - advance_workflow
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - create_task
+      - update_task
+      - read_project_file
+      - write_output
+      - get_system_health
+      - get_circuit_breaker_status
+      - reset_circuit_breaker
+
+  researcher:
+    description: "Research and discovery — read-heavy, limited write"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - read_project_file
+      - write_output
+      - search_codebase
+
+  builder:
+    description: "Analysis and prototype — read/write, code generation"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - read_project_file
+      - write_output
+      - create_task
+
+  writer:
+    description: "Documentation — structured output, repo management"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - read_project_file
+      - write_output
+
+  moderator:
+    description: "Community — external contribution triage"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - read_project_file
+      - write_output
+
+agents:
+  mission:
+    role: guardian
+  research:
+    role: researcher
+  analysis:
+    role: builder
+  prototype:
+    role: builder
+  documentation:
+    role: writer
+  community:
+    role: moderator

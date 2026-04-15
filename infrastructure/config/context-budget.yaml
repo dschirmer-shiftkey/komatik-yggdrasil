@@ -1,0 +1,30 @@
+# Context Budget — token limits for agent session context assembly
+# Controls how much context is loaded at session start
+
+defaults:
+  max_context_tokens: 8000
+  compaction_lookback_days: 7
+  max_memory_tokens: 2000
+  max_active_tasks: 5
+  max_recent_runs: 10
+
+overrides:
+  mission:
+    max_context_tokens: 12000
+    max_memory_tokens: 3000
+    compaction_lookback_days: 14
+  research:
+    max_context_tokens: 10000
+    max_memory_tokens: 2500
+  analysis:
+    max_context_tokens: 10000
+    max_memory_tokens: 2500
+  prototype:
+    max_context_tokens: 8000
+    max_memory_tokens: 2000
+  documentation:
+    max_context_tokens: 10000
+    max_memory_tokens: 3000
+  community:
+    max_context_tokens: 6000
+    max_memory_tokens: 1500

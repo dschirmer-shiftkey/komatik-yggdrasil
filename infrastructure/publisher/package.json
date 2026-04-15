@@ -1,0 +1,17 @@
+{
+  "name": "@komatik/seedling-publisher",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Git output pipeline for Yggdrasil Seedlings — validates artifacts, commits to public repo, generates TOKENS.md",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

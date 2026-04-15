@@ -1,0 +1,16 @@
+{
+  "_comment": "Bifrost budget configuration for Seedling 001: Energy",
+  "virtualKey": {
+    "name": "seedling-001-energy",
+    "budget": {
+      "maxCostPerMonth": 50.00,
+      "maxRequestsPerMinute": 20,
+      "maxTokensPerMinute": 80000
+    },
+    "allowedModels": [
+      "claude-sonnet-4-20250514",
+      "gpt-4o-mini",
+      "gemini-2.0-flash"
+    ]
+  }
+}
