@@ -6,33 +6,36 @@
  *
  *   Session Start:
  *     1. Register identity with the gateway
- *     2. Load SOUL.md and MISSION.md
+ *     2. Load SOUL.md, MISSION.md, and role config YAML
  *     3. Assemble context (memory, learnings, tasks) from DB
  *     4. Check workflow queue for pending steps
  *
  *   Agent Loop:
- *     5. Claim and execute workflow steps via Bifrost LLM calls
- *     6. Log every decision to the decisions audit trail
- *     7. Record run telemetry (tokens, cost, duration)
- *     8. Refresh context after each step to absorb new learnings
- *     9. Circuit breaker: 5 consecutive failures → hard stop
+ *     5. Atomically claim workflow steps (FOR UPDATE SKIP LOCKED)
+ *     6. Execute via Bifrost LLM calls
+ *     7. Log decisions, record telemetry, propagate output to next step
+ *     8. Write file artifacts to /workspace/output
+ *     9. Refresh context after each step
+ *     10. Circuit breaker: 5 consecutive failures -> hard stop
  *
  *   Session End:
- *     10. Update session status and summary
- *     11. Close DB pool
+ *     11. Update session status and summary
+ *     12. Close DB pool
  *
  * Environment:
- *   AGENT_ROLE       — one of: mission, research, analysis, prototype, documentation, community
- *   AGENT_ID         — agent identifier (usually same as role)
- *   GATEWAY_URL      — gateway HTTP endpoint
- *   WORKSPACE_PATH   — mounted workspace root
- *   DATABASE_URL     — PostgreSQL connection string
- *   BIFROST_URL      — Bifrost AI gateway for LLM calls
+ *   AGENT_ROLE        — one of: mission, research, analysis, prototype, documentation, community
+ *   AGENT_ID          — agent identifier (usually same as role)
+ *   GATEWAY_URL       — gateway HTTP endpoint
+ *   WORKSPACE_PATH    — mounted workspace root
+ *   DATABASE_URL      — PostgreSQL connection string
+ *   BIFROST_URL       — Bifrost AI gateway for LLM calls
+ *   BIFROST_API_KEY   — Bifrost virtual key for auth
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { Pool } from "pg";
+import yaml from "js-yaml";
 import { assembleContext } from "./lib/context-assembler.js";
 import { logDecision } from "./lib/decisions.js";
 
@@ -41,7 +44,10 @@ const AGENT_ID = process.env.AGENT_ID || ROLE;
 const GATEWAY_URL = process.env.GATEWAY_URL || "http://gateway:18789";
 const WORKSPACE = process.env.WORKSPACE_PATH || "/workspace";
 const BIFROST_URL = process.env.BIFROST_URL || "http://bifrost:8080";
+const BIFROST_API_KEY = process.env.BIFROST_API_KEY || "";
 const CONTEXT_BUDGET_PATH = path.join(WORKSPACE, "config", "context-budget.yaml");
+const AGENT_CONFIG_PATH = path.join(WORKSPACE, "config", "agent.yaml");
+const OUTPUT_DIR = path.join(WORKSPACE, "output");
 
 const MAX_CONSECUTIVE_FAILURES = 5;
 const POLL_INTERVAL_MS = 30_000;
@@ -53,21 +59,7 @@ if (!ROLE) {
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// ── Gateway readiness ───────────────────────────────────────────────────
-
-async function waitForGateway(maxRetries = 30, intervalMs = 2000) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const res = await fetch(`${GATEWAY_URL}/health`);
-      if (res.ok) return true;
-    } catch {}
-    console.log(`[agent:${ROLE}] Waiting for gateway... (${i + 1}/${maxRetries})`);
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  throw new Error("Gateway did not become healthy");
-}
-
-// ── Static context loaders ──────────────────────────────────────────────
+// ── Config loaders ──────────────────────────────────────────────────────
 
 function loadSoul() {
   const soulPath = path.join(WORKSPACE, "souls", `${ROLE}.md`);
@@ -87,6 +79,33 @@ function loadMission() {
   return "";
 }
 
+function loadAgentConfig() {
+  if (!fs.existsSync(AGENT_CONFIG_PATH)) {
+    console.warn(`[agent:${ROLE}] No agent config at ${AGENT_CONFIG_PATH}`);
+    return {};
+  }
+  try {
+    return yaml.load(fs.readFileSync(AGENT_CONFIG_PATH, "utf-8")) || {};
+  } catch (err) {
+    console.warn(`[agent:${ROLE}] Failed to parse agent config: ${err.message}`);
+    return {};
+  }
+}
+
+// ── Gateway readiness ───────────────────────────────────────────────────
+
+async function waitForGateway(maxRetries = 30, intervalMs = 2000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res = await fetch(`${GATEWAY_URL}/health`);
+      if (res.ok) return true;
+    } catch {}
+    console.log(`[agent:${ROLE}] Waiting for gateway... (${i + 1}/${maxRetries})`);
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  throw new Error("Gateway did not become healthy");
+}
+
 // ── Session lifecycle ───────────────────────────────────────────────────
 
 async function registerSession() {
@@ -100,12 +119,16 @@ async function registerSession() {
 }
 
 async function endSession(sessionId, status, summary) {
-  await pool.query(
-    `UPDATE agent_sessions
-     SET ended_at = now(), status = $1, result = $2
-     WHERE id = $3`,
-    [status, summary, sessionId]
-  );
+  try {
+    await pool.query(
+      `UPDATE agent_sessions
+       SET ended_at = now(), status = $1, result = $2
+       WHERE id = $3`,
+      [status, summary, sessionId]
+    );
+  } catch (err) {
+    console.error(`[agent:${ROLE}] Failed to end session: ${err.message}`);
+  }
 }
 
 async function recordRun(jobName, status, summary, tokensUsed, costUsd, durationSeconds) {
@@ -117,46 +140,80 @@ async function recordRun(jobName, status, summary, tokensUsed, costUsd, duration
   );
 }
 
-// ── Workflow step management ────────────────────────────────────────────
+// ── Atomic workflow step management ─────────────────────────────────────
 
-async function getPendingSteps() {
+async function claimNextStep() {
   const result = await pool.query(
-    `SELECT ws.id, ws.task, ws.input, w.id AS workflow_id, w.name AS workflow_name
-     FROM workflow_steps ws
-     JOIN workflows w ON w.id = ws.workflow_id
-     WHERE ws.agent_id = $1
-       AND ws.status = 'pending'
-       AND w.status IN ('pending', 'running')
-       AND NOT EXISTS (
-         SELECT 1 FROM workflow_steps dep
-         WHERE dep.id = ANY(ws.depends_on)
-           AND dep.status != 'completed'
-       )
-     ORDER BY ws.step_order
-     LIMIT 1`,
+    `UPDATE workflow_steps
+     SET status = 'running', started_at = now()
+     WHERE id = (
+       SELECT ws.id
+       FROM workflow_steps ws
+       JOIN workflows w ON w.id = ws.workflow_id
+       WHERE ws.agent_id = $1
+         AND ws.status = 'pending'
+         AND w.status IN ('pending', 'running')
+         AND NOT EXISTS (
+           SELECT 1 FROM workflow_steps dep
+           WHERE dep.id = ANY(ws.depends_on)
+             AND dep.status != 'completed'
+         )
+       ORDER BY ws.step_order
+       LIMIT 1
+       FOR UPDATE SKIP LOCKED
+     )
+     RETURNING id, task, input,
+       (SELECT w.id FROM workflows w
+        JOIN workflow_steps ws2 ON ws2.workflow_id = w.id
+        WHERE ws2.id = workflow_steps.id) AS workflow_id,
+       (SELECT w.name FROM workflows w
+        JOIN workflow_steps ws2 ON ws2.workflow_id = w.id
+        WHERE ws2.id = workflow_steps.id) AS workflow_name`,
     [AGENT_ID]
   );
-  return result.rows;
-}
 
-async function claimStep(stepId) {
-  await pool.query(
-    "UPDATE workflow_steps SET status = 'running', started_at = now() WHERE id = $1",
-    [stepId]
-  );
+  if (result.rows.length === 0) return null;
+
+  const step = result.rows[0];
+
   await pool.query(
     `UPDATE workflows SET status = 'running', updated_at = now()
-     WHERE id = (SELECT workflow_id FROM workflow_steps WHERE id = $1)
-       AND status = 'pending'`,
-    [stepId]
+     WHERE id = $1 AND status = 'pending'`,
+    [step.workflow_id]
   );
+
+  return step;
 }
 
 async function completeStep(stepId, output) {
-  await pool.query(
-    "UPDATE workflow_steps SET status = 'completed', output = $1, completed_at = now() WHERE id = $2",
-    [JSON.stringify(output), stepId]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      "UPDATE workflow_steps SET status = 'completed', output = $1, completed_at = now() WHERE id = $2",
+      [JSON.stringify(output), stepId]
+    );
+
+    await client.query(
+      `UPDATE workflow_steps
+       SET input = $1
+       WHERE id IN (
+         SELECT dep_step.id
+         FROM workflow_steps dep_step
+         WHERE $2 = ANY(dep_step.depends_on)
+           AND dep_step.status = 'pending'
+       )`,
+      [JSON.stringify(output), stepId]
+    );
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function failStep(stepId, error) {
@@ -166,12 +223,33 @@ async function failStep(stepId, error) {
   );
 }
 
+// ── File artifact output ────────────────────────────────────────────────
+
+function writeArtifact(stepTask, content) {
+  const roleDir = path.join(OUTPUT_DIR, ROLE);
+  fs.mkdirSync(roleDir, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const slug = stepTask.slice(0, 40).replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase();
+  const filename = `${timestamp}-${slug}.md`;
+  const filePath = path.join(roleDir, filename);
+
+  fs.writeFileSync(filePath, content);
+  console.log(`[agent:${ROLE}] Wrote artifact: ${ROLE}/${filename}`);
+  return filePath;
+}
+
 // ── Bifrost LLM integration ────────────────────────────────────────────
 
 async function callBifrost(systemPrompt, userPrompt) {
+  const headers = { "Content-Type": "application/json" };
+  if (BIFROST_API_KEY) {
+    headers["Authorization"] = `Bearer ${BIFROST_API_KEY}`;
+  }
+
   const res = await fetch(`${BIFROST_URL}/v1/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       messages: [
         { role: "system", content: systemPrompt },
@@ -192,6 +270,7 @@ async function callBifrost(systemPrompt, userPrompt) {
     content: data.choices?.[0]?.message?.content || "",
     inputTokens: usage.prompt_tokens || 0,
     outputTokens: usage.completion_tokens || 0,
+    costUsd: usage.total_cost || 0,
     model: data.model || "unknown",
   };
 }
@@ -218,34 +297,42 @@ async function executeStep(step, systemPrompt, sessionContext) {
   const startTime = Date.now();
   const response = await callBifrost(systemPrompt, userPrompt);
   const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+  const totalTokens = response.inputTokens + response.outputTokens;
 
-  const decision = await logDecision(pool, {
-    agentId: AGENT_ID,
-    decisionType: "workflow_step",
-    description: `Completed step: ${step.task.slice(0, 200)}`,
-    reasoning: `Part of workflow ${step.workflow_name}`,
-    confidence: 0.8,
-    outcome: "success",
-  });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  await pool.query(
-    `INSERT INTO llm_usage
-       (agent_id, provider, model, task_type, input_tokens, output_tokens, cost_usd, latency_ms)
-     VALUES ($1, 'bifrost', $2, $3, $4, $5, 0, $6)`,
-    [
-      AGENT_ID,
-      response.model,
-      "workflow_step",
-      response.inputTokens,
-      response.outputTokens,
-      durationSeconds * 1000,
-    ]
-  );
+    await client.query(
+      `INSERT INTO decisions
+         (agent_id, decision_type, description, reasoning, confidence, outcome)
+       VALUES ($1, 'workflow_step', $2, $3, 0.8, 'success')`,
+      [
+        AGENT_ID,
+        `Completed step: ${step.task.slice(0, 200)}`,
+        `Part of workflow ${step.workflow_name}`,
+      ]
+    );
+
+    await client.query(
+      `INSERT INTO llm_usage
+         (agent_id, provider, model, task_type, input_tokens, output_tokens, cost_usd, latency_ms)
+       VALUES ($1, 'bifrost', $2, 'workflow_step', $3, $4, $5, $6)`,
+      [AGENT_ID, response.model, response.inputTokens, response.outputTokens, response.costUsd, durationSeconds * 1000]
+    );
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.warn(`[agent:${ROLE}] Failed to record telemetry: ${err.message}`);
+  } finally {
+    client.release();
+  }
 
   return {
     content: response.content,
-    decision,
-    tokensUsed: response.inputTokens + response.outputTokens,
+    tokensUsed: totalTokens,
+    costUsd: response.costUsd,
     durationSeconds,
   };
 }
@@ -258,26 +345,28 @@ async function agentLoop(sessionId, soul, mission, sessionContext) {
   let consecutiveFailures = 0;
 
   while (true) {
-    const steps = await getPendingSteps();
+    const step = await claimNextStep();
 
-    if (steps.length === 0) {
+    if (!step) {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
       continue;
     }
 
-    const step = steps[0];
-    console.log(`[agent:${ROLE}] Claiming step: ${step.task.slice(0, 80)}`);
-    await claimStep(step.id);
+    console.log(`[agent:${ROLE}] Claimed step: ${step.task.slice(0, 80)}`);
 
     try {
       const result = await executeStep(step, systemPrompt, context);
+
       await completeStep(step.id, { content: result.content });
+
+      writeArtifact(step.task, result.content);
+
       await recordRun(
         `${step.workflow_name}/${step.task.slice(0, 50)}`,
         "success",
         `Completed in ${result.durationSeconds}s, ${result.tokensUsed} tokens`,
         result.tokensUsed,
-        0,
+        result.costUsd,
         result.durationSeconds
       );
 
@@ -305,9 +394,7 @@ async function agentLoop(sessionId, soul, mission, sessionContext) {
         `${step.workflow_name}/${step.task.slice(0, 50)}`,
         "failure",
         err.message.slice(0, 500),
-        0,
-        0,
-        0
+        0, 0, 0
       );
 
       consecutiveFailures++;
@@ -323,32 +410,31 @@ async function agentLoop(sessionId, soul, mission, sessionContext) {
 
 // ── Main ────────────────────────────────────────────────────────────────
 
+let sessionId = null;
+
 async function main() {
   console.log(`[agent:${ROLE}] Starting...`);
 
   await waitForGateway();
   console.log(`[agent:${ROLE}] Gateway is healthy`);
 
-  // Session start protocol (AGENTS.md §Session Start)
   const soul = loadSoul();
   const mission = loadMission();
+  const agentConfig = loadAgentConfig();
   console.log(
-    `[agent:${ROLE}] Loaded SOUL.md (${soul.length} chars), MISSION.md (${mission.length} chars)`
+    `[agent:${ROLE}] Loaded SOUL.md (${soul.length} chars), MISSION.md (${mission.length} chars), config keys: [${Object.keys(agentConfig).join(", ")}]`
   );
 
-  const sessionId = await registerSession();
+  sessionId = await registerSession();
   console.log(`[agent:${ROLE}] Session registered: ${sessionId}`);
 
   const { context: sessionContext, tokenCount, budget } = await assembleContext(
-    pool,
-    AGENT_ID,
-    CONTEXT_BUDGET_PATH
+    pool, AGENT_ID, CONTEXT_BUDGET_PATH
   );
   console.log(
     `[agent:${ROLE}] Context assembled: ${tokenCount} tokens (budget: ${budget.max_context_tokens})`
   );
 
-  // Wire up graceful shutdown before entering the loop
   process.on("SIGTERM", async () => {
     console.log(`[agent:${ROLE}] Shutting down...`);
     await endSession(sessionId, "completed", "Graceful shutdown via SIGTERM");
@@ -361,5 +447,9 @@ async function main() {
 
 main().catch(async (err) => {
   console.error(`[agent:${ROLE}] Fatal error:`, err);
+  if (sessionId) {
+    await endSession(sessionId, "failed", `Fatal: ${err.message}`);
+  }
+  await pool.end().catch(() => {});
   process.exit(1);
 });

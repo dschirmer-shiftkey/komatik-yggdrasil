@@ -2,14 +2,17 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache bash curl postgresql-client python3
+RUN apk add --no-cache bash curl
 
 COPY package.json package-lock.json* ./
 RUN npm ci --production
 
 COPY . .
 
-RUN mkdir -p /workspace/output /workspace/context/.circuit-breaker
+RUN mkdir -p /workspace/output /workspace/config \
+    && chown -R node:node /workspace
+
+USER node
 
 ENV NODE_ENV=production \
     WORKSPACE_PATH=/workspace \
