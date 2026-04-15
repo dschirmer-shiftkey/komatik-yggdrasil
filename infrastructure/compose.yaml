@@ -1,8 +1,12 @@
 # Yggdrasil Seedling — Docker Compose Template
 #
 # Boots a fully operational Seedling with one command:
-#   docker compose -f infrastructure/compose.yaml \
+#   docker compose --project-directory . \
+#     -f infrastructure/compose.yaml \
 #     -f seedlings/001-energy/config/compose.override.yaml up
+#
+# Prerequisites:
+#   cp .env.example .env   # fill in API keys and passwords
 #
 # Each Seedling extends this base with mission-specific overrides.
 
@@ -75,6 +79,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   agent-research:
     <<: *agent-common
@@ -92,6 +97,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   agent-analysis:
     <<: *agent-common
@@ -109,6 +115,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   agent-prototype:
     <<: *agent-common
@@ -126,6 +133,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   agent-documentation:
     <<: *agent-common
@@ -143,6 +151,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   agent-community:
     <<: *agent-common
@@ -160,6 +169,7 @@ services:
       - output:/workspace/output
       - mission:/workspace/mission:ro
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
   bifrost:
     build:
@@ -250,7 +260,6 @@ services:
       - GITHUB_BRANCH=${GITHUB_BRANCH:-main}
       - SEEDLING_NAME=${SEEDLING_NAME}
       - SEEDLING_DIR=${SEEDLING_DIR}
-      - BIFROST_METRICS_URL=http://bifrost:9090/metrics
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - PUBLISH_INTERVAL_MINUTES=${PUBLISH_INTERVAL_MINUTES:-30}
     volumes:

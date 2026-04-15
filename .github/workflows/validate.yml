@@ -110,6 +110,16 @@ jobs:
         working-directory: infrastructure/${{ matrix.service }}
         run: npm ci
 
-      - name: Syntax check
+      - name: Syntax check (recursive)
         working-directory: infrastructure/${{ matrix.service }}
-        run: node --check *.js
+        run: |
+          find . -name '*.js' -not -path '*/node_modules/*' -not -path '*/test/*' -exec node --check {} +
+
+      - name: Run tests
+        working-directory: infrastructure/${{ matrix.service }}
+        run: |
+          if [ -d test ]; then
+            npm test
+          else
+            echo "No tests for ${{ matrix.service }}"
+          fi
