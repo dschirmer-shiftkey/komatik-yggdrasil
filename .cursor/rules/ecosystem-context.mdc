@@ -1,0 +1,66 @@
+---
+description: How Yggdrasil fits into the Komatik ecosystem — always load for context
+alwaysApply: true
+---
+
+# Komatik Ecosystem Context
+
+Yggdrasil is the **Foundation Layer** of the Komatik ecosystem. It is not a product
+for sale — it is a charitable initiative that demonstrates what Komatik's technology
+can do when the profit motive is removed.
+
+## Parent Ecosystem
+
+Komatik is a "Developers on Demand" marketplace. The platform consists of:
+
+- **Komatik** (monorepo) — Next.js platform, orchestrator, knowledge engine, 62+ Edge Functions
+- **komatik-agents** — 17 AI agents running 24/7 on a headless NUC via OpenClaw
+- **komatik-base-camp** — operational dashboard (Next.js on the NUC)
+- **10 satellite products** — GTM orbit (Triage, Floe, DeployGuard, Traverse, Forge, Watchtower, Cognitive Debt) + Creative orbit (Daydream Studio, Bored, Storyboard Studio)
+- **Yggdrasil** — this repo, the charitable foundation layer
+
+All products share the Komatik 4-Layer Architecture (introduced in PR #800):
+1. **Shared Identity** — `.komatik.xyz` cookie domain, cross-subdomain SSO
+2. **Unified Design System** — `@komatik/design-tokens`, product accent colors (Yggdrasil = Growth Green `#10B981`)
+3. **AI Fabric** — unified `callLLM()`, multi-provider, model registry, telemetry
+4. **Cross-Product Journeys** — integrated user flows across products
+
+## Yggdrasil's Relationship to Base Camp Infrastructure
+
+Yggdrasil Seedlings are built on the same technology as Base Camp, stripped down for portability:
+
+| Base Camp (NUC) | Yggdrasil (Seedling) | Difference |
+|-----------------|---------------------|------------|
+| OpenClaw Gateway (full) | OpenClaw Gateway (slim) | No NUC hooks, no Tailscale, no cron |
+| 17 agents, complex RBAC | 6 agents per Seedling, simplified RBAC | Focused roles per mission |
+| OS-level cron | Scheduler service (Node.js) | Portable, no OS dependency |
+| Agents write to git directly | Publisher sidecar | Single point of GitHub auth |
+| No LLM metering | Bifrost AI Gateway | Budget caps, token tracking |
+| PostgreSQL 16 (shared) | PostgreSQL 16 (per-Seedling) | Isolated state per Seedling |
+
+## Hub Coordination
+
+The komatik-agents hub tracks Yggdrasil via these files:
+- `projects/komatik-yggdrasil/STATUS.md` — current health and blockers
+- `projects/komatik-yggdrasil/ROADMAP.md` — goals (YG1–YG6)
+- `projects/komatik-yggdrasil/RESEARCH.md` — R&D findings
+- `projects/komatik-yggdrasil/seed.sql` — MCP project registration
+- `BRAND.md` — Yggdrasil listed in Foundation Layer
+- `SOUL.md` — coordinator knows about Yggdrasil
+- `ROADMAP.md` — Yggdrasil in the project index
+- `MEMORY.md` — infrastructure notes on Seedlings
+
+## Active Goals (from hub ROADMAP)
+
+- **GOAL-YG1**: Build Seedling container base images (gateway + agent)
+- **GOAL-YG2**: Integrate Bifrost for LLM cost metering
+- **GOAL-YG3**: Build publisher service for git output pipeline
+- **GOAL-YG4**: Launch Seedling 001 — Energy
+- **GOAL-YG5**: Launch yggdrasil.komatik.xyz public dashboard
+- **GOAL-YG6**: Template and scale — stamp out Seedlings 002-007
+
+## Current Blockers
+
+- VPS deployment waits on PR #800 merge (design tokens + portfolio migration)
+- DNS for yggdrasil.komatik.xyz not yet configured
+- Docker images need to be built from the infrastructure specs (GOAL-YG1)
