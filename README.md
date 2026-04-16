@@ -93,17 +93,30 @@ Only approved outputs are published. The scheduler parses this JSON to signal th
 All LLM calls are metered. Every token spent is logged in each Seedling's
 `TOKENS.md` — a public ledger of compute donated by Komatik.
 
-## Active Seedlings
+## The Tree
 
-| # | Codename | Mission | Status |
-|---|----------|---------|--------|
-| 001 | [Energy](seedlings/001-energy/) | Solving energy poverty via distributed renewables and open hardware | Infrastructure Ready |
-| 002 | Hunger | Reducing food loss between harvest and consumption | Planned |
-| 003 | Water | Open-source water purification and collection systems | Planned |
-| 004 | Health | Open diagnostic tools for under-resourced medical settings | Planned |
-| 005 | Education | AI-native learning tools for limited-infrastructure regions | Planned |
-| 006 | Climate | Community-scale carbon sequestration and climate resilience | Planned |
-| 007 | Community | Bridging divided communities via evidence-based dialogue | Planned |
+Yggdrasil organizes its work into **Branches** (problem domains) and **Seedlings**
+(geographically scoped instances). Seedlings on the same branch share knowledge
+upward but are independently funded. See [tree.yaml](tree.yaml) for the machine-readable registry.
+
+### Branch: Energy Poverty
+
+| # | Seedling | Geographic Focus | Status |
+|---|----------|-----------------|--------|
+| 001 | [Energy](seedlings/001-energy/) | Sub-Saharan Africa & Southeast Asia | Infrastructure Ready |
+
+### Branch: Homelessness
+
+| # | Seedling | Geographic Focus | Status |
+|---|----------|-----------------|--------|
+| 002 | [Homelessness LA](seedlings/002-homelessness-la/) | Los Angeles County | Planned |
+
+### Proposing a New Seedling
+
+Anyone can propose a new seedling by opening a GitHub issue. Each branch defines
+a **scope floor** — the minimum geographic granularity for a seedling. Below that
+level, contributors join an existing seedling rather than creating a new one.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full proposal process.
 
 ## The Pledge
 
@@ -153,8 +166,13 @@ komatik-yggdrasil/
 │       ├── rbac-policies.yaml    # Role → tool authorization matrix
 │       ├── agent-capacity.yaml   # Max concurrent steps per role
 │       └── context-budget.yaml   # Token budget per context section
+├── branches/                 # Shared knowledge per problem domain
+│   ├── energy-poverty/       # Cross-seedling findings for energy
+│   └── homelessness/         # Cross-seedling findings for homelessness
+├── tree.yaml                 # Branch & Seedling registry (website consumes this)
 ├── seedlings/
-│   └── 001-energy/           # First Seedling
+│   ├── 001-energy/           # Energy — Sub-Saharan Africa & SE Asia
+│   └── 002-homelessness-la/  # Homelessness — Los Angeles County
 │       ├── MISSION.md        # Immutable mission statement
 │       ├── AGENTS.md         # Seedling-specific agent protocol
 │       ├── TOKENS.md         # Public compute ledger (auto-updated)

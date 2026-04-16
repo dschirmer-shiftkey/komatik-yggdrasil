@@ -1,0 +1,40 @@
+# tree.yaml — Yggdrasil Branch & Seedling Registry
+#
+# Single source of truth for the tree hierarchy.
+# komatik.ai website consumes this at build time via GitHub raw content.
+# CI validates that every seedling listed here has a matching directory.
+#
+# THE TREE METAPHOR
+#   Yggdrasil   = The world tree (this initiative)
+#   Branches    = Problem domains (Homelessness, Energy Poverty, etc.)
+#   Seedlings   = Geographically scoped instances on a branch
+#
+# ROOT TRIMMING — Granularity Governance
+#   Each branch defines a `scope_floor` — the minimum geographic scope for
+#   a seedling. Below this level, contributors join an existing seedling
+#   rather than creating a new one. See CONTRIBUTING.md for the full policy.
+#
+#   Overlap rules:
+#     Narrower than floor          → Redirect to existing seedling
+#     Same scope, same geography   → Contribute to existing seedling
+#     Broader scope, contains existing → Merge discussion
+#     Same scope, non-overlapping  → Allow (new seedling)
+
+branches:
+  energy-poverty:
+    name: "Energy Poverty"
+    description: "Distributed renewable generation and open hardware for communities without reliable electricity."
+    icon: "zap"
+    scope_floor: "region"
+    scope_levels: ["global", "continental", "region", "national"]
+    seedlings:
+      - "001-energy"
+
+  homelessness:
+    name: "Homelessness"
+    description: "Data-driven approaches to understanding and reducing homelessness in specific urban areas."
+    icon: "home"
+    scope_floor: "metro"
+    scope_levels: ["global", "continental", "national", "state", "metro"]
+    seedlings:
+      - "002-homelessness-la"
