@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520" fill="none">
+  <!--
+    Yggdrasil trunk & roots — line art, ink-drawing style
+    Strokes only, no fills. Sage green palette.
+  -->
+
+  <!-- ═══ TRUNK — dual outline strokes for thickness ═══ -->
+
+  <!-- Left edge of trunk -->
+  <path d="M275,0 C272,30 268,70 264,110 C260,150 256,200 253,250 C250,300 247,340 245,380 C243,410 242,430 244,445 C246,455 252,462 262,468 C275,475 290,478 300,479"
+    stroke="#4a7c59" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Right edge of trunk -->
+  <path d="M325,0 C328,30 332,70 336,110 C340,150 344,200 347,250 C350,300 353,340 355,380 C357,410 358,430 356,445 C354,455 348,462 338,468 C325,475 310,478 300,479"
+    stroke="#4a7c59" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- Center bark line -->
+  <path d="M300,5 C299,60 298,130 299,200 C300,270 300,340 300,400 C300,440 300,460 300,479"
+    stroke="#4a7c59" stroke-width="1.5" opacity="0.25"/>
+
+  <!-- Left bark grain -->
+  <path d="M285,15 C283,80 281,160 280,240 C279,320 280,390 282,450"
+    stroke="#4a7c59" stroke-width="1" opacity="0.2"/>
+
+  <!-- Right bark grain -->
+  <path d="M315,15 C317,80 319,160 320,240 C321,320 318,390 316,450"
+    stroke="#4a7c59" stroke-width="1" opacity="0.2"/>
+
+  <!-- Knot -->
+  <ellipse cx="293" cy="190" rx="10" ry="7" stroke="#4a7c59" stroke-width="1.5" opacity="0.3" transform="rotate(-8,293,190)"/>
+  <ellipse cx="310" cy="310" rx="7" ry="5" stroke="#4a7c59" stroke-width="1.2" opacity="0.2" transform="rotate(6,310,310)"/>
+
+  <!-- ═══ BRANCH STUBS ═══ -->
+
+  <!-- Left branches -->
+  <path d="M264,55 C248,42 235,32 222,25" stroke="#4a7c59" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+  <path d="M222,25 C215,20 210,16 206,12" stroke="#6a9c72" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+  <path d="M258,130 C244,120 232,112 224,108" stroke="#4a7c59" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <path d="M224,108 C218,104 213,100 210,96" stroke="#6a9c72" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <path d="M254,220 C242,212 232,206 226,202" stroke="#6a9c72" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Right branches -->
+  <path d="M336,80 C352,68 365,58 375,50" stroke="#4a7c59" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
+  <path d="M375,50 C382,44 388,38 392,34" stroke="#6a9c72" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <path d="M342,170 C356,160 368,152 376,146" stroke="#4a7c59" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
+  <path d="M376,146 C382,142 386,138 390,134" stroke="#6a9c72" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+  <path d="M348,280 C358,272 366,266 372,262" stroke="#6a9c72" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- ═══ ROOTS — gnarly, spreading, line art ═══ -->
+
+  <!-- === LEFT ROOTS === -->
+
+  <!-- Primary left root — thick, long -->
+  <path d="M252,465 C232,470 200,476 165,482 C130,488 90,494 50,498 C25,500 8,502 0,503"
+    stroke="#4a7c59" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+  <!-- Parallel line for thickness -->
+  <path d="M250,472 C228,478 195,484 160,490 C125,496 85,500 48,504 C24,506 8,508 0,509"
+    stroke="#4a7c59" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Secondary left root — lower angle -->
+  <path d="M248,470 C225,480 195,492 160,502 C130,510 95,516 65,518 C40,520 20,520 0,520"
+    stroke="#4a7c59" stroke-width="4.5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Third left root — upper, thinner -->
+  <path d="M258,458 C240,460 215,464 188,470 C160,476 130,482 105,486"
+    stroke="#6a9c72" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Thin tendril — curling down -->
+  <path d="M245,475 C230,485 210,498 185,508 C165,516 140,520 120,520"
+    stroke="#6a9c72" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- Thin tendril — upper -->
+  <path d="M260,452 C245,454 225,458 208,464"
+    stroke="#6a9c72" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- === RIGHT ROOTS === -->
+
+  <!-- Primary right root -->
+  <path d="M348,465 C368,470 400,476 435,482 C470,488 505,494 535,498 C555,500 575,502 590,503"
+    stroke="#4a7c59" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M350,472 C372,478 405,484 440,490 C475,496 510,500 540,504"
+    stroke="#4a7c59" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Secondary right root -->
+  <path d="M352,470 C375,480 405,492 440,502 C470,510 500,516 530,518"
+    stroke="#4a7c59" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Third right root -->
+  <path d="M342,458 C360,460 385,464 412,470 C440,476 465,480 488,484"
+    stroke="#6a9c72" stroke-width="2.5" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Thin right tendril -->
+  <path d="M355,475 C370,485 390,498 415,508 C435,516 455,520 475,520"
+    stroke="#6a9c72" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- === ROOT TEXTURE at base === -->
+  <path d="M268,468 C262,470 255,473 250,476" stroke="#5a8a68" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <path d="M332,468 C338,470 345,473 350,476" stroke="#5a8a68" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <path d="M278,472 C270,475 260,480 252,484" stroke="#5a8a68" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M322,472 C330,475 340,480 348,484" stroke="#5a8a68" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+</svg>

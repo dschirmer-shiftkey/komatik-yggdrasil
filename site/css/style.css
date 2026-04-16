@@ -1,0 +1,578 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Yggdrasil — The World Tree of Open Research
+   Organic & earthy: parchment tones, natural greens, hand-drawn feel
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Custom Properties ──────────────────────────────────────────────── */
+
+:root {
+  /* Palette */
+  --parchment:       #f5f0e8;
+  --parchment-dark:  #e8e0d0;
+  --earth:           #2a2118;
+  --earth-mid:       #3d3228;
+  --earth-light:     #5a4d3e;
+  --green:           #4a7c59;
+  --green-light:     #6a9c72;
+  --green-dark:      #2d6a4f;
+  --gold:            #c9a94e;
+  --gold-dim:        #a08535;
+  --amber:           #b8860b;
+  --teal:            #2a7f8f;
+  --forest:          #2d6a4f;
+  --slate:           #5c6b7a;
+  --cream:           #faf6ee;
+
+  /* Typography */
+  --font-serif:      'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-sans:       'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Spacing */
+  --section-pad:     clamp(3rem, 8vh, 6rem);
+  --content-max:     900px;
+  --gutter:          clamp(1.5rem, 4vw, 3rem);
+}
+
+/* ── Reset & Base ───────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-size: clamp(1rem, 1.1vw, 1.15rem);
+  line-height: 1.7;
+  color: var(--earth);
+  background: var(--parchment);
+  overflow-x: hidden;
+}
+
+/* Subtle parchment texture via CSS noise */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ── SVG Tree Container ─────────────────────────────────────────────── */
+
+#tree-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  opacity: 0.18;
+  transition: opacity 0.5s ease;
+}
+
+#tree-container.active {
+  opacity: 0.3;
+}
+
+#world-tree {
+  height: 400%;
+  width: auto;
+  max-width: 100%;
+}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+
+.section {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--section-pad) var(--gutter);
+}
+
+.section-content {
+  max-width: var(--content-max);
+  width: 100%;
+}
+
+.section-dark {
+  background: var(--earth);
+  color: var(--cream);
+}
+
+.section-dark .section-title {
+  color: var(--gold);
+}
+
+/* ── Typography ─────────────────────────────────────────────────────── */
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.section-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: var(--green-dark);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin-bottom: 1.25rem;
+}
+
+a {
+  color: var(--green);
+  text-decoration: underline;
+  text-decoration-color: var(--green-light);
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--gold-dim);
+}
+
+strong {
+  font-weight: 600;
+  color: var(--green-dark);
+}
+
+.section-dark strong {
+  color: var(--gold);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────── */
+
+#hero {
+  min-height: 100vh;
+  text-align: center;
+  flex-direction: column;
+  background: radial-gradient(ellipse at 50% 80%, var(--parchment-dark) 0%, var(--parchment) 70%);
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-title {
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--green-dark);
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.hero-subtitle {
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--earth-light);
+  margin-bottom: 0;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.hero-tagline {
+  font-family: var(--font-sans);
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  color: var(--earth-light);
+  max-width: 500px;
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.scroll-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 3rem;
+  color: var(--earth-light);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeInUp 1s 1.5s ease forwards;
+}
+
+.scroll-indicator svg {
+  animation: bobDown 2s ease-in-out infinite;
+}
+
+@keyframes bobDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes fadeInUp {
+  to { opacity: 0.6; transform: translateY(0); }
+}
+
+/* ── Story ───────────────────────────────────────────────────────────── */
+
+.story-text {
+  max-width: 720px;
+}
+
+.myth-quote {
+  border-left: 3px solid var(--gold);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  font-style: italic;
+  font-size: 1.15em;
+  color: var(--earth-mid);
+  background: rgba(201, 169, 78, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ── Mission ─────────────────────────────────────────────────────────── */
+
+.mission-lead {
+  font-size: 1.15em;
+  max-width: 720px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.card {
+  background: var(--cream);
+  border: 1px solid var(--parchment-dark);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(42, 33, 24, 0.08);
+}
+
+.card h3 {
+  font-size: 1.2rem;
+  color: var(--green-dark);
+  margin-bottom: 0.75rem;
+}
+
+.card p {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--earth-light);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* ── World Tree Section ──────────────────────────────────────────────── */
+
+#world-tree-section {
+  min-height: auto;
+  padding-top: var(--section-pad);
+  padding-bottom: var(--section-pad);
+}
+
+.roots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.root-group {
+  border-radius: 12px;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.root-title {
+  font-size: 1.3rem;
+  color: var(--root-color, var(--gold));
+  margin-bottom: 0.5rem;
+}
+
+.root-desc {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 1.25rem;
+}
+
+.category-list {
+  list-style: none;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.category-item.active {
+  opacity: 1;
+}
+
+.category-item.active .cat-name {
+  font-weight: 600;
+}
+
+.cat-seeds {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.category-item.active .cat-seeds {
+  color: var(--gold);
+  opacity: 1;
+  font-style: normal;
+}
+
+/* ── Knowledge Flow ──────────────────────────────────────────────────── */
+
+.flow-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 3rem 0;
+}
+
+.flow-step {
+  text-align: center;
+  max-width: 500px;
+  padding: 1.5rem 2rem;
+  background: var(--cream);
+  border: 1px solid var(--parchment-dark);
+  border-radius: 12px;
+  width: 100%;
+}
+
+.flow-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.flow-step h3 {
+  font-size: 1.1rem;
+  color: var(--green-dark);
+  margin-bottom: 0.5rem;
+}
+
+.flow-step p {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--earth-light);
+  margin-bottom: 0;
+}
+
+.flow-arrow {
+  font-size: 1.2rem;
+  color: var(--green);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+
+.principle-quote {
+  border-left: 3px solid var(--green);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  font-style: italic;
+  font-size: 1.15em;
+  color: var(--earth-mid);
+  background: rgba(74, 124, 89, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ── Pledge ───────────────────────────────────────────────────────────── */
+
+.pledge-timeline {
+  display: flex;
+  gap: 2rem;
+  margin-top: 3rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pledge-phase {
+  text-align: center;
+  flex: 1;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.phase-marker {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--gold-dim);
+  margin: 0 auto 1rem;
+  position: relative;
+}
+
+.phase-marker.current {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(201, 169, 78, 0.4);
+}
+
+.pledge-phase h3 {
+  font-size: 1rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.pledge-phase p {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────── */
+
+#footer {
+  min-height: auto;
+  padding: 4rem var(--gutter);
+  text-align: center;
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer-motto {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--earth-light);
+  margin-bottom: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+.footer-links a {
+  color: var(--green);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+}
+
+.footer-links a:hover {
+  color: var(--gold-dim);
+  text-decoration: underline;
+}
+
+.footer-copy {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--earth-light);
+  opacity: 0.6;
+  margin-bottom: 0;
+}
+
+/* ── Reveal Animation ────────────────────────────────────────────────── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* Stagger children */
+.card-grid .reveal:nth-child(2) { transition-delay: 0.1s; }
+.card-grid .reveal:nth-child(3) { transition-delay: 0.2s; }
+.card-grid .reveal:nth-child(4) { transition-delay: 0.3s; }
+
+.roots-grid .reveal:nth-child(2) { transition-delay: 0.15s; }
+.roots-grid .reveal:nth-child(3) { transition-delay: 0.3s; }
+.roots-grid .reveal:nth-child(4) { transition-delay: 0.45s; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .hero-title {
+    letter-spacing: 0.04em;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pledge-timeline {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #tree-container {
+    opacity: 0.1;
+  }
+
+  .flow-diagram {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 2rem 1.25rem;
+  }
+
+  #tree-container {
+    display: none;
+  }
+}
