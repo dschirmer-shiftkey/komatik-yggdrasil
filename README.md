@@ -123,21 +123,36 @@ every output is public, every finding is open-source.
 komatik-yggdrasil/
 ├── infrastructure/           # Container specs and shared configs
 │   ├── compose.yaml          # Template Docker Compose for a Seedling
+│   ├── .env.example          # Environment template (copy to root .env)
 │   ├── gateway/              # OpenClaw Gateway — RBAC, 17 tools, migrations
+│   │   ├── Dockerfile        # Node 22 Alpine image
 │   │   ├── server.js         # HTTP server with /health, /api/tool, /api/tools
-│   │   ├── tools.js          # Tool handler implementations
+│   │   ├── tools.js          # 17 tool handler implementations
 │   │   ├── rbac.js           # Role-based access control engine
-│   │   ├── migrate.js        # Transactional migration runner
+│   │   ├── migrate.js        # Checksummed transactional migration runner
+│   │   ├── schema.sql        # Base schema (10 tables)
+│   │   ├── migrations/       # Incremental SQL migrations
 │   │   └── test/             # RBAC + tool registry unit tests
 │   ├── agent/                # Agent runner image
+│   │   ├── Dockerfile        # Node 22 Alpine image
 │   │   ├── runner.js         # Main agent loop — claim, execute, record
-│   │   ├── lib/              # Context assembler, decisions, memory
-│   │   ├── souls/            # Role-specific behavioral directives
+│   │   ├── lib/              # Context assembler, decisions module
+│   │   ├── souls/            # 6 role-specific behavioral directives
 │   │   └── test/             # Context assembler + decisions unit tests
 │   ├── publisher/            # Git output pipeline + TOKENS.md generator
+│   │   ├── Dockerfile        # Node 22 Alpine + git
+│   │   └── index.js          # Artifact validation, secret scan, git push
 │   ├── scheduler/            # Cycle loop manager with retry + circuit breaker
-│   ├── bifrost/              # Custom Bifrost Dockerfile + env var entrypoint
-│   └── config/               # RBAC policies, capacity limits, context budgets
+│   │   ├── Dockerfile        # Node 22 Alpine image
+│   │   └── index.js          # Workflow creation, step retry, circuit breaker
+│   ├── bifrost/              # Custom Bifrost AI Gateway
+│   │   ├── Dockerfile        # Extends maximhq/bifrost
+│   │   ├── config.template.json  # LLM provider config template
+│   │   └── entrypoint.sh     # Runtime env var substitution
+│   └── config/               # Shared operational configs
+│       ├── rbac-policies.yaml    # Role → tool authorization matrix
+│       ├── agent-capacity.yaml   # Max concurrent steps per role
+│       └── context-budget.yaml   # Token budget per context section
 ├── seedlings/
 │   └── 001-energy/           # First Seedling
 │       ├── MISSION.md        # Immutable mission statement
@@ -147,10 +162,15 @@ komatik-yggdrasil/
 │       ├── RESEARCH/         # Raw research artifacts
 │       ├── MODELS/           # Data models and simulations
 │       ├── PROTOTYPES/       # Code and design proof-of-concepts
-│       └── config/           # Agent YAMLs, Bifrost config, compose override
+│       └── config/           # Overrides for this Seedling
+│           ├── agents/*.yaml # 6 agent configs (system prompts, models, limits)
+│           ├── bifrost.json  # LLM provider config ($50/month budget)
+│           └── compose.override.yaml  # Mounts configs into base containers
 ├── docs/
 │   └── adr/                  # Architecture Decision Records
 │       └── 001-agent-gateway-bypass.md
+├── .github/workflows/        # CI pipeline
+│   └── validate.yml          # Structure validation, Docker builds, tests
 ├── .env.example              # Root-level env template (copy to .env)
 ├── AGENTS.md                 # Seedling agent collective protocol
 ├── CONTRIBUTING.md           # How to participate
