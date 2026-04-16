@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Propose a seed (sponsored research instance)
+    url: https://github.com/dschirmer-shiftkey/komatik-yggdrasil/blob/main/CONTRIBUTING.md
+    about: Want to sponsor a geographically-scoped research seed? See CONTRIBUTING.md — seed admission is separate from Public Signal.
+  - name: Contribute code or infrastructure
+    url: https://github.com/dschirmer-shiftkey/komatik-yggdrasil/blob/main/CONTRIBUTING.md
+    about: PRs to the container, infrastructure, website, or docs are welcome. The tree itself is sealed; the container is open.
+  - name: Read the charter
+    url: https://github.com/dschirmer-shiftkey/komatik-yggdrasil/blob/main/docs/charter.md
+    about: Mission, scope, anti-scope, principles, glass wall. The constitutional document of Yggdrasil.

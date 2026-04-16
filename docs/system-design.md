@@ -491,10 +491,10 @@ This serves as the template for all other roots, categories, and seeds.
 - [ ] Apex tier implementation (event-processor PROCESSOR_TYPE=apex, migrations, boot)
 - [ ] Collaboration Protocol event types and state schema
 - [ ] Contention Map data model and publishing cadence
-- [ ] Public Signal intake surface (GitHub issue template for v1)
+- [x] Public Signal intake surface (GitHub issue template for v1) — see `.github/ISSUE_TEMPLATE/public-signal.yml`
 - [x] Sync §1 Hierarchy and §2 Container Tiers to include Apex tier
 - [x] Sync §4 Cost Model to include Apex tier
-- [ ] Charter Section 2 (Scope rationale) and Section 6 (Quality bar) — see `charter.md`
+- [x] Charter Section 2 (Scope rationale) and Section 6 (Quality bar) — written 2026-04-16
 - [ ] Cloud provider selection (Fargate Spot vs Hetzner vs hybrid)
 - [ ] Sponsor dashboard / portal
 - [ ] Budget reset mechanism (monthly anniversary vs calendar month)

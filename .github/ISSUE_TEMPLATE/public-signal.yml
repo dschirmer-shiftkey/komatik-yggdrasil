@@ -1,0 +1,97 @@
+name: Public Signal
+description: Suggest a problem, angle, or direction for the Yggdrasil tree to consider
+title: "[Signal] "
+labels: ["public-signal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Speak into the well
+
+        Yggdrasil listens to the public through the **Public Signal** — aggregated voices, not individual ones. Your submission joins others on similar themes; a periodic aggregation clusters them by meaning and mass, and the tree decides what to do with each theme.
+
+        **What happens to your submission:**
+
+        1. It lands in the public signal bucket (this GitHub issue).
+        2. A scheduled aggregation job clusters recent signals by semantic similarity. One person's 1000 copies count as one signal; your submission joins any cluster that matches its theme.
+        3. The apex tier (Yggdrasil HQ) reviews the aggregated digest and routes each cluster to the relevant tier — root, category, or seed.
+        4. That tier decides publicly: **addressed** (cites an existing finding), **researching** (creates a task), or **out of scope** (with a reason).
+        5. Every decision is published, visible to anyone.
+
+        **What this is not:** a way to direct research. No individual voice reaches the tree's research logic. Mass patterns are considered but never mandated. See [docs/charter.md §5](../blob/main/docs/charter.md) — the tree is sealed; the glass wall is two-way but no one reaches through it.
+
+        **What is out of scope:** work that is evil (designed to harm, exploit, enable violence) or illegal. See [docs/charter.md §3](../blob/main/docs/charter.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you thinking about?
+      description: |
+        Describe the problem as you see it. Be specific. What is happening? Who is affected? What makes it hard?
+
+        Don't worry about categorizing it — we have a clustering pass for that.
+      placeholder: |
+        e.g., "In my city, unhoused people who get stable housing often lose it within 6 months when support services end. The data I've seen suggests the cliff matters more than the initial placement, but I rarely see that framing in research."
+    validations:
+      required: true
+
+  - type: input
+    id: geography
+    attributes:
+      label: Geography (optional)
+      description: If this is specific to a place, name it (city, region, country). Leave blank if not geographic.
+      placeholder: "e.g., Los Angeles County; Sub-Saharan Africa; global"
+
+  - type: dropdown
+    id: category_hint
+    attributes:
+      label: Which area does this seem closest to? (optional)
+      description: A rough hint helps aggregation. Pick the nearest fit — exact matches not required. Leave blank if unsure.
+      options:
+        - "(not sure)"
+        - "Basic Needs — Energy"
+        - "Basic Needs — Housing"
+        - "Basic Needs — Hunger"
+        - "Basic Needs — Water"
+        - "Basic Needs — Health"
+        - "Human Growth — Education"
+        - "Human Growth — Economic Opportunity"
+        - "Human Growth — Equality"
+        - "Planet & Life — Climate"
+        - "Planet & Life — Oceans"
+        - "Planet & Life — Ecosystems"
+        - "Society & Systems — Peace"
+        - "Society & Systems — Community"
+        - "Society & Systems — Digital Access"
+        - "About Yggdrasil itself (charter, structure, how it works)"
+      default: 0
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence or source (optional)
+      description: |
+        Links, papers, datasets, or lived-experience context that would help the tree take the signal seriously.
+        Not required — unsourced signals still count toward aggregation.
+      placeholder: |
+        e.g., "HUD 2023 PIT count methodology critique (https://...)"
+                "My organization's exit-interview dataset, available on request"
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else? (optional)
+      description: Context, perspective, constraints, cautions — whatever helps.
+      placeholder: Free text. Short is fine.
+
+  - type: checkboxes
+    id: acknowledgments
+    attributes:
+      label: Acknowledgments
+      options:
+        - label: I understand that individual submissions do not direct the tree's research — only aggregated patterns are considered.
+          required: true
+        - label: I am not submitting on behalf of a commercial interest seeking research to advance its product, market position, or competitive advantage.
+          required: true
+        - label: This submission is not evil (designed to harm/exploit/enable violence) or illegal.
+          required: true
