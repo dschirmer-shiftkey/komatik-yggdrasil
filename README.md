@@ -90,10 +90,10 @@ nobody funds because the returns are measured in human outcomes, not revenue.
 
 ## The World Tree
 
-Yggdrasil organizes all work into a three-tier hierarchy:
+Yggdrasil organizes all work into a four-tier hierarchy:
 
 ```
-Yggdrasil
+Yggdrasil HQ (apex — cross-root synthesis + Mission Guardian)
   |
   +-- Root: Basic Needs
   |     +-- Category: Energy
@@ -122,7 +122,8 @@ Yggdrasil
 
 | Level | Count | Role |
 |-------|-------|------|
-| **Root** | 4 | Cross-category synthesis and mission governance |
+| **Apex** (Yggdrasil HQ) | 1 | Cross-root synthesis; Mission Guardian against [the charter](docs/charter.md); Contention Map aggregation; Public Signal routing |
+| **Root** | 4 | Cross-category synthesis and mission governance within a pillar |
 | **Category** | 14 | Domain-specific knowledge coordination and quality review |
 | **Seed** | N | Geographically scoped deep research — the actual work |
 
