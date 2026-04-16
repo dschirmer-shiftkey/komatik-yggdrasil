@@ -9,6 +9,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@komatik/shared": "file:../shared",
     "pg": "^8.13.1"
   },
   "engines": {

@@ -1,0 +1,16 @@
+{
+  "name": "@komatik/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared modules for Yggdrasil infrastructure — Supabase client, constants",
+  "exports": {
+    "./supabase": "./supabase.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

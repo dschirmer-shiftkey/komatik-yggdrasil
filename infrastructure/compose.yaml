@@ -74,6 +74,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -92,6 +97,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -110,6 +120,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -128,6 +143,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -146,6 +166,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -164,6 +189,11 @@ services:
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - BIFROST_URL=http://bifrost:8080
       - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
     volumes:
       - workspace:/workspace
       - output:/workspace/output
@@ -262,6 +292,12 @@ services:
       - SEED_DIR=${SEED_DIR}
       - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
       - PUBLISH_INTERVAL_MINUTES=${PUBLISH_INTERVAL_MINUTES:-30}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SOURCE_TYPE=${SOURCE_TYPE:-seed}
+      - SOURCE_ID=${SOURCE_ID}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
     volumes:
       - output:/workspace/output
     depends_on:

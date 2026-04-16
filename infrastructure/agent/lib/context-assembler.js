@@ -12,8 +12,20 @@
 
 import fs from "node:fs";
 import yaml from "js-yaml";
-
 import path from "node:path";
+
+// Lazy-load Supabase to avoid hard dependency in tests and environments
+// where the shared module isn't installed (CI runs per-service).
+let _supabaseModule = null;
+async function getSupabaseModule() {
+  if (_supabaseModule) return _supabaseModule;
+  try {
+    _supabaseModule = await import("@komatik/shared/supabase");
+    return _supabaseModule;
+  } catch {
+    return null;
+  }
+}
 
 const CHARS_PER_TOKEN = 4;
 const CATEGORY_FINDINGS_PATH = "/workspace/category/SHARED-FINDINGS.md";
@@ -215,6 +227,104 @@ function formatWorkflowSteps(steps) {
   return md;
 }
 
+// ── World Tree Context (Supabase) ─────────────────────────────────────
+
+/**
+ * Query the shared Supabase world tree for findings from the category,
+ * root, and geographic peers. This is the "read up before you work" step.
+ */
+async function loadTreeKnowledge() {
+  const mod = await getSupabaseModule();
+  if (!mod) return "";
+
+  const supabase = mod.getSupabase();
+  if (!supabase) return "";
+
+  const categoryId = process.env.CATEGORY_ID;
+  const rootId = process.env.ROOT_ID;
+  const sourceId = process.env.SOURCE_ID;
+
+  if (!categoryId || !rootId) {
+    console.warn("[context] CATEGORY_ID or ROOT_ID not set — skipping tree knowledge");
+    return "";
+  }
+
+  // Parse geographic scope from seed config if available
+  let geoScope = [];
+  try {
+    const seedConfigPath = "/workspace/config/seed.yaml";
+    if (fs.existsSync(seedConfigPath)) {
+      const seedConfig = yaml.load(fs.readFileSync(seedConfigPath, "utf-8"));
+      geoScope = seedConfig?.scope?.covers || [];
+    }
+  } catch { /* non-fatal */ }
+
+  try {
+    const results = await mod.queryTreeFindings(supabase, {
+      categoryId,
+      rootId,
+      geographicScope: geoScope,
+      excludeSourceId: sourceId,
+    });
+
+    return formatTreeKnowledge(results);
+  } catch (err) {
+    console.warn(`[context] Failed to load tree knowledge: ${err.message}`);
+    return "";
+  }
+}
+
+function formatTreeKnowledge(results) {
+  const sections = [];
+
+  if (results.category.length > 0) {
+    let md = "### Category Findings (peer seeds)\n\n";
+    md += "> Validated findings from other seeds in this category.\n";
+    md += "> Treat as known — do not re-research these topics.\n\n";
+    for (const f of results.category) {
+      md += `- **${f.title}** (${f.source_id}, ${f.confidence})\n`;
+      md += `  ${f.summary}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (results.root.length > 0) {
+    let md = "### Root Synthesis (cross-category insights)\n\n";
+    md += "> Insights synthesized across all categories in this root.\n\n";
+    for (const f of results.root) {
+      md += `- **${f.title}** (from ${f.category_id})\n`;
+      md += `  ${f.summary}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (results.geographic.length > 0) {
+    let md = "### Geographic Peers (nearby seeds, other categories)\n\n";
+    md += "> Findings from seeds in the same geographic area but different categories.\n\n";
+    for (const f of results.geographic) {
+      md += `- **${f.title}** (${f.category_id}/${f.source_id})\n`;
+      md += `  ${f.summary}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (results.superseded.length > 0) {
+    let md = "### Superseded/Retracted (do not cite)\n\n";
+    md += "> These findings are outdated or retracted. Do not re-research or cite.\n\n";
+    for (const f of results.superseded) {
+      md += `- ~~${f.title}~~ — ${f.confidence}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (sections.length === 0) return "";
+
+  return "## World Tree Knowledge\n\n" +
+    "> Knowledge from the shared world tree (Supabase). " +
+    "Read before researching to avoid duplication.\n\n" +
+    sections.join("\n") + "\n";
+}
+
 // ── Category Context ───────────────────────────────────────────────────
 
 /**
@@ -276,8 +386,9 @@ export async function assembleContext(pool, agentId, configPath) {
 
   const memoryBudget = budget.max_memory_tokens || 2000;
   const categoryBudget = budget.max_category_findings_tokens || 1500;
+  const treeBudget = budget.max_tree_knowledge_tokens || 2000;
   const totalBudget = budget.max_context_tokens || 8000;
-  const taskBudget = totalBudget - memoryBudget - categoryBudget;
+  const taskBudget = totalBudget - memoryBudget - categoryBudget - treeBudget;
 
   const truncatedMemory = truncateToTokens(memorySection, memoryBudget);
   const truncatedTasks = truncateToTokens(taskSection, Math.max(taskBudget, 1000));
@@ -288,11 +399,21 @@ export async function assembleContext(pool, agentId, configPath) {
     ? truncateToTokens(categoryFindings, categoryBudget)
     : "";
 
+  // Load world tree knowledge from Supabase (cross-tier findings)
+  const treeKnowledge = await loadTreeKnowledge();
+  const truncatedTree = treeKnowledge
+    ? truncateToTokens(treeKnowledge, treeBudget)
+    : "";
+
   let context = "# Session Context\n\n";
   context += `> Agent: ${agentId} | Budget: ${totalBudget} tokens | Memory: ${memoryBudget} tokens\n\n`;
 
   if (truncatedMemory.trim()) {
     context += "---\n# Memory\n\n" + truncatedMemory;
+  }
+
+  if (truncatedTree.trim()) {
+    context += "---\n# World Tree Knowledge\n\n" + truncatedTree;
   }
 
   if (truncatedCategory.trim()) {
@@ -305,9 +426,10 @@ export async function assembleContext(pool, agentId, configPath) {
 
   const tokenCount = estimateTokens(context);
   const categoryTokens = estimateTokens(truncatedCategory);
+  const treeTokens = estimateTokens(truncatedTree);
   console.log(
     `[context] Assembled ${tokenCount} tokens for ${agentId} ` +
-      `(budget: ${totalBudget}, memory: ${memoryBudget}, category: ${categoryTokens}) ` +
+      `(budget: ${totalBudget}, memory: ${memoryBudget}, category: ${categoryTokens}, tree: ${treeTokens}) ` +
       `[${learnings.length} learnings, ${runs.length} runs, ${tasks.length} tasks, ` +
       `${messages.length} messages, ${steps.length} steps, ${retractions.length} retractions]`
   );
