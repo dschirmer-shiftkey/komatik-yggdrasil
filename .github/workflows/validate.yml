@@ -69,6 +69,23 @@ jobs:
           fi
           echo "All Seedlings validated"
 
+      - name: Validate tree.yaml registry
+        run: |
+          if [[ -f "tree.yaml" ]]; then
+            echo "Checking tree.yaml seedling references..."
+            WARNINGS=0
+            # Extract seedling IDs from tree.yaml (lines matching - "NNN-name")
+            grep -oP '"\K[0-9]{3}-[a-z0-9-]+(?=")' tree.yaml | while read -r sid; do
+              if [[ ! -d "seedlings/$sid" ]]; then
+                echo "::warning::tree.yaml references seedling '$sid' but seedlings/$sid/ does not exist"
+                WARNINGS=$((WARNINGS + 1))
+              fi
+            done
+            echo "tree.yaml validation complete"
+          else
+            echo "No tree.yaml found — skipping registry validation"
+          fi
+
       - name: Validate TOKENS.md format
         run: |
           for tokens_file in seedlings/*/TOKENS.md; do
