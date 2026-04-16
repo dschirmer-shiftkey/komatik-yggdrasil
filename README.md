@@ -111,7 +111,7 @@ seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 | **Housing** — Homelessness reduction, affordable housing research | [002-homelessness-la](seedlings/002-homelessness-la/) (Los Angeles County) | Planned |
 | **Hunger** — Food insecurity, food loss, smallholder agriculture | *Open for proposals* | — |
 | **Water** — Purification, collection, sanitation systems | *Open for proposals* | — |
-| **Health** — Open diagnostics, treatment protocols, health systems | *Open for proposals* | — |
+| **Health** — Physical and behavioral health, mental health, addiction, elder care | *Open for proposals* | — |
 
 ### Human Growth
 
@@ -125,7 +125,7 @@ seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 
 | Branch | Seedlings | Status |
 |--------|-----------|--------|
-| **Climate** — Carbon sequestration, adaptation, community resilience | *Open for proposals* | — |
+| **Climate** — Carbon sequestration, adaptation, disaster resilience, early warning | *Open for proposals* | — |
 | **Oceans** — Marine conservation, plastic pollution, fisheries | *Open for proposals* | — |
 | **Ecosystems** — Biodiversity, reforestation, soil health, wildlife | *Open for proposals* | — |
 
@@ -134,7 +134,7 @@ seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 | Branch | Seedlings | Status |
 |--------|-----------|--------|
 | **Peace** — Conflict resolution, refugee support, governance | *Open for proposals* | — |
-| **Community** — Civic engagement, dialogue, cultural preservation | *Open for proposals* | — |
+| **Community** — Civic life, arts, culture, animal welfare, disaster prep, transit, urban planning | *Open for proposals* | — |
 | **Digital Access** — Digital divide, connectivity, open knowledge | *Open for proposals* | — |
 
 ### Proposing a New Seedling

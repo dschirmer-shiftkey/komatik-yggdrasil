@@ -71,7 +71,7 @@ trunks:
 
       health:
         name: "Health"
-        description: "Open diagnostic tools, treatment protocols, and health system strengthening for under-resourced medical settings."
+        description: "Physical and behavioral health — open diagnostics, treatment protocols, mental health, addiction, elder care, and health system strengthening."
         icon: "heart-pulse"
         sdgs: [3]
         scope_floor: "national"
@@ -123,7 +123,7 @@ trunks:
 
       climate:
         name: "Climate"
-        description: "Community-scale carbon sequestration, climate adaptation strategies, and resilience planning."
+        description: "Carbon sequestration, climate adaptation, disaster resilience, early warning systems, and community resilience planning."
         icon: "thermometer-sun"
         sdgs: [13]
         scope_floor: "region"
@@ -167,7 +167,7 @@ trunks:
 
       community:
         name: "Community"
-        description: "Bridging divided communities through evidence-based dialogue, civic engagement, and cultural preservation."
+        description: "Everything that makes a place livable — civic engagement, cultural preservation, arts and heritage, animal welfare, disaster preparedness, transportation and mobility, urban planning, and public spaces."
         icon: "users"
         sdgs: [11]
         scope_floor: "metro"
