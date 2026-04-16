@@ -18,7 +18,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/mission.md:/workspace/souls/mission.md:ro
       - ../seedlings/002-homelessness-la/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   agent-research:
     environment:
@@ -27,7 +27,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/research.md:/workspace/souls/research.md:ro
       - ../seedlings/002-homelessness-la/config/agents/research.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   agent-analysis:
     environment:
@@ -36,7 +36,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/analysis.md:/workspace/souls/analysis.md:ro
       - ../seedlings/002-homelessness-la/config/agents/analysis.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   agent-prototype:
     environment:
@@ -45,7 +45,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/prototype.md:/workspace/souls/prototype.md:ro
       - ../seedlings/002-homelessness-la/config/agents/prototype.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   agent-documentation:
     environment:
@@ -54,7 +54,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/documentation.md:/workspace/souls/documentation.md:ro
       - ../seedlings/002-homelessness-la/config/agents/documentation.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   agent-community:
     environment:
@@ -63,7 +63,7 @@ services:
       - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/community.md:/workspace/souls/community.md:ro
       - ../seedlings/002-homelessness-la/config/agents/community.yaml:/workspace/config/agent.yaml:ro
-      - ../branches/homelessness:/workspace/branch:ro
+      - ../branches/housing:/workspace/branch:ro
 
   publisher:
     environment:

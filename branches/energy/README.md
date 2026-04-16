@@ -1,4 +1,4 @@
-# Branch: Energy Poverty
+# Branch: Energy
 
 > Distributed renewable generation and open hardware for communities without
 > reliable electricity.

@@ -1,4 +1,4 @@
-# Shared Findings — Homelessness Branch
+# Shared Findings — Housing Branch
 
 > Cross-seedling knowledge that applies to homelessness regardless of city.
 > Manually curated from individual seedling research outputs.

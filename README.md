@@ -93,23 +93,49 @@ Only approved outputs are published. The scheduler parses this JSON to signal th
 All LLM calls are metered. Every token spent is logged in each Seedling's
 `TOKENS.md` — a public ledger of compute donated by Komatik.
 
-## The Tree
+## The World Tree
 
-Yggdrasil organizes its work into **Branches** (problem domains) and **Seedlings**
-(geographically scoped instances). Seedlings on the same branch share knowledge
-upward but are independently funded. See [tree.yaml](tree.yaml) for the machine-readable registry.
+Yggdrasil organizes all of its work into a hierarchy:
+- **Trunks** — broad categories of human need
+- **Branches** — specific problem domains within a trunk
+- **Seedlings** — geographically scoped instances, independently funded
 
-### Branch: Energy Poverty
+Seedlings on the same branch share knowledge upward. Sponsors fund specific
+seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 
-| # | Seedling | Geographic Focus | Status |
-|---|----------|-----------------|--------|
-| 001 | [Energy](seedlings/001-energy/) | Sub-Saharan Africa & Southeast Asia | Infrastructure Ready |
+### Basic Needs
 
-### Branch: Homelessness
+| Branch | Seedlings | Status |
+|--------|-----------|--------|
+| **Energy** — Distributed renewables, open hardware, community microgrids | [001-energy](seedlings/001-energy/) (Sub-Saharan Africa & SE Asia) | Infrastructure Ready |
+| **Housing** — Homelessness reduction, affordable housing research | [002-homelessness-la](seedlings/002-homelessness-la/) (Los Angeles County) | Planned |
+| **Hunger** — Food insecurity, food loss, smallholder agriculture | *Open for proposals* | — |
+| **Water** — Purification, collection, sanitation systems | *Open for proposals* | — |
+| **Health** — Open diagnostics, treatment protocols, health systems | *Open for proposals* | — |
 
-| # | Seedling | Geographic Focus | Status |
-|---|----------|-----------------|--------|
-| 002 | [Homelessness LA](seedlings/002-homelessness-la/) | Los Angeles County | Planned |
+### Human Growth
+
+| Branch | Seedlings | Status |
+|--------|-----------|--------|
+| **Education** — Learning tools, literacy, vocational training | *Open for proposals* | — |
+| **Economic Opportunity** — Poverty reduction, microfinance, job creation | *Open for proposals* | — |
+| **Equality** — Gender, racial, and disability equity research | *Open for proposals* | — |
+
+### Planet & Life
+
+| Branch | Seedlings | Status |
+|--------|-----------|--------|
+| **Climate** — Carbon sequestration, adaptation, community resilience | *Open for proposals* | — |
+| **Oceans** — Marine conservation, plastic pollution, fisheries | *Open for proposals* | — |
+| **Ecosystems** — Biodiversity, reforestation, soil health, wildlife | *Open for proposals* | — |
+
+### Society & Systems
+
+| Branch | Seedlings | Status |
+|--------|-----------|--------|
+| **Peace** — Conflict resolution, refugee support, governance | *Open for proposals* | — |
+| **Community** — Civic engagement, dialogue, cultural preservation | *Open for proposals* | — |
+| **Digital Access** — Digital divide, connectivity, open knowledge | *Open for proposals* | — |
 
 ### Proposing a New Seedling
 
@@ -167,8 +193,8 @@ komatik-yggdrasil/
 │       ├── agent-capacity.yaml   # Max concurrent steps per role
 │       └── context-budget.yaml   # Token budget per context section
 ├── branches/                 # Shared knowledge per problem domain
-│   ├── energy-poverty/       # Cross-seedling findings for energy
-│   └── homelessness/         # Cross-seedling findings for homelessness
+│   ├── energy/               # Cross-seedling findings for energy
+│   └── housing/              # Cross-seedling findings for housing
 ├── tree.yaml                 # Branch & Seedling registry (website consumes this)
 ├── seedlings/
 │   ├── 001-energy/           # Energy — Sub-Saharan Africa & SE Asia

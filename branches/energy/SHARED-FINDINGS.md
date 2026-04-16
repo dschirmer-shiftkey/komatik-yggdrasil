@@ -1,4 +1,4 @@
-# Shared Findings — Energy Poverty Branch
+# Shared Findings — Energy Branch
 
 > Cross-seedling knowledge that applies to energy poverty regardless of geography.
 > Manually curated from individual seedling research outputs.
