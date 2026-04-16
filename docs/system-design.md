@@ -461,8 +461,329 @@ This serves as the template for all other roots, categories, and seeds.
 - [x] Supabase schema rename: `branch_id` → `category_id`, `trunk_id` → `root_id`
 - [x] Root HQ container spec (basic-needs)
 - [x] Category container spec (housing)
+- [x] Public suggestion queue mechanism (designed: §13 Public Signal Pipeline)
+- [ ] Apex tier (Yggdrasil HQ) container spec and implementation
+- [ ] Collaboration Protocol event types and state schema
+- [ ] Contention Map data model and publishing cadence
+- [ ] Public Signal intake surface (GitHub issue template for v1)
+- [ ] Sync §1 Hierarchy and §2 Container Tiers to include Apex tier
+- [ ] Charter Section 2 (Scope rationale) and Section 6 (Quality bar) — see `charter.md`
 - [ ] Cloud provider selection (Fargate Spot vs Hetzner vs hybrid)
-- [ ] Public suggestion queue mechanism
 - [ ] Sponsor dashboard / portal
 - [ ] Budget reset mechanism (monthly anniversary vs calendar month)
 - [ ] Local model evaluation for cost reduction
+
+---
+
+## 10. Apex Tier — Yggdrasil HQ
+
+> Added 2026-04-16. The hierarchy is now four-tier. §1 and §2 will be
+> updated to reflect this in the next full doc refresh.
+
+The apex tier sits above the 4 Root HQs. It is the only tier with a
+tree-wide view, and it has two distinct jobs that share a single container.
+
+### 10.1 Role
+
+**Synthesizer** — detects cross-root patterns that no single Root can see.
+
+- Reads validated findings from all 4 Root HQs
+- Looks for: shared underlying drivers, compounding effects across roots,
+  geographic convergences, resource contention that spans the tree
+- Publishes findings with `source_type = 'apex'`
+- Lower-tier containers pull these down like any other knowledge
+
+**Mission Guardian** — watches for drift from the charter.
+
+- Loads `docs/charter.md` into context
+- Reviews Root HQ outputs against the charter's mission, guiding value,
+  principles, and anti-scope
+- Emits `mission_drift_flagged` events when a Root's work is drifting
+- Apex has no authority to force changes — drift flags are signals, not
+  commands. Roots can ignore a flag. The public sees the flag too, which
+  is the accountability mechanism.
+
+Both outputs are knowledge, not orders. The apex does not direct; it
+synthesizes and warns.
+
+### 10.2 Workload Profile
+
+| Attribute | Value |
+|---|---|
+| Count | 1 container |
+| Agents | Mission Guardian + Synthesis (2 agents, same stack shape as Root HQ) |
+| Cycle | Daily or on significant event (promoted finding at root level) |
+| Models | Opus for both agents — deepest reasoning, whole-tree context |
+| Compute | 0.5 vCPU, 2 GB, scale-to-zero between runs |
+| Est. cost | ~$15-40/mo (Komatik-funded) |
+
+### 10.3 New `source_type`
+
+Supabase enum needs `apex` added alongside existing `seed` / `category` /
+`root`. Migration required before apex container can publish.
+
+### 10.4 New Event Types
+
+- `mission_drift_flagged` — guardian emits when a Root's work diverges
+  from charter
+- `cross_root_pattern_detected` — synthesizer emits when a pattern spans
+  two or more roots
+
+---
+
+## 11. Collaboration Protocol
+
+Conflicts are not bugs to suppress — they are signals about real tensions.
+Rather than flagging one side or the other, the tree forces opposed nodes
+into collaborative work. The parent tier is always the mediator.
+
+### 11.1 Why
+
+Two claims from the charter shape this:
+
+- **No real damage is happening.** This is research and synthesis; the
+  stakes of a "wrong" answer are low. That frees the system to experiment
+  and disagree without catastrophic downside.
+- **Conflicts are positive.** They surface the real tensions blocking
+  progress on hard problems.
+
+### 11.2 Hierarchy of Mediation
+
+| Conflict level | Mediator |
+|---|---|
+| Seed vs. seed | Category |
+| Category vs. category | Root HQ |
+| Root vs. root | Apex (Yggdrasil HQ) |
+
+The parent is neutral (it's synthesizing across its children) and already
+has the context to frame a joint question.
+
+### 11.3 Protocol
+
+Self-healing, autonomous, no human in the loop.
+
+```
+1. Detection (scheduled, automatic)
+   Each parent runs a conflict-detection pass over its children's recent
+   findings. An LLM identifies:
+     - direct contradictions (A says X, B says ¬X)
+     - opposed recommendations
+     - claims about the same underlying scarce resource
+   Pairs get tagged `potential_conflict` in knowledge_events.
+
+2. Mandate (automatic)
+   Parent emits:
+     knowledge_events {
+       event_type: "collaboration_required",
+       source_id: <parent>,
+       payload: {
+         parties: [child_a, child_b],
+         shared_question: "<narrowly scoped>"
+       }
+     }
+   Both children add the shared question to their next cycle's task queue
+   as high priority.
+
+3. Parallel Work (automatic)
+   Each child researches the shared question from its own vantage.
+   Publishes position + reasoning + evidence, tagged with a shared
+   `collaboration_id`.
+
+4. Reconciliation Attempt (automatic, parent's job)
+   Parent reviews both positions. Three outcomes:
+
+     a. Reconciled      → publishes unified finding with form:
+                          "under conditions A, X holds; under B, Y holds"
+                          + both originals cited
+                          Must cite specific conditions — "both are
+                          partially right" without specifics is rejected.
+
+     b. Partial         → publishes the portion agreed, flags remaining
+                          disagreement as contested.
+
+     c. Irreconcilable  → publishes a `contested_tension` finding with
+                          both positions + the structural reason they
+                          cannot unify. This is NOT a failure.
+
+5. State Update
+   Original conflicting findings get `confidence: "contested"` and link to
+   the reconciliation or tension via `citations`.
+```
+
+### 11.4 Guards Against Reconciliation-Theater
+
+A lazy parent could always publish "reconciled" with mushy synthesis.
+Two countermeasures:
+
+- Reconciled findings must cite **specific conditions** under which each
+  original position holds. Mushy synthesis is rejected.
+- Apex audits reconciliations periodically across all parents, flags
+  patterns of poor-quality synthesis.
+
+### 11.5 New Event Types
+
+- `potential_conflict` — detected but not yet mandated
+- `collaboration_required` — mandated, parties notified
+- `contested_tension` — published as an irreconcilable outcome
+
+### 11.6 New `confidence` Values
+
+Existing: `preliminary`, `validated`, `superseded`, `retracted`.
+Adding: `contested` — finding is under collaboration or has been
+published as part of an irreconcilable tension.
+
+---
+
+## 12. Contention Map
+
+The Collaboration Protocol's most valuable output is not the reconciled
+findings — it's the map of irreconcilable tensions. Every unresolved
+conflict is a datapoint about where humanity's real blockers are.
+
+### 12.1 Purpose
+
+The Contention Map is Yggdrasil's **secondary output** (charter §1). It is
+a public, living record that helps humanity direct attention to where
+progress is genuinely blocked — not by lack of effort, but by real
+disagreement the tree itself cannot resolve.
+
+No other entity in the world produces this view. It emerges only from a
+system that does cross-root synthesis in public.
+
+### 12.2 Data Model
+
+Sourced from the `findings` table where `confidence = 'contested'` and the
+finding is a `contested_tension` outcome from the Collaboration Protocol.
+
+Published as a view or regular snapshot:
+
+```sql
+-- view: contention_map
+SELECT
+  f.id,
+  f.source_type,       -- which tier produced the tension
+  f.root_id,
+  f.category_id,
+  f.title,
+  f.published_at,
+  f.payload->>'position_a',
+  f.payload->>'position_b',
+  f.payload->>'structural_reason',
+  count(c.citing_finding_id) AS times_referenced,
+  age(now(), f.published_at) AS age
+FROM findings f
+LEFT JOIN citations c ON c.cited_finding_id = f.id
+WHERE f.confidence = 'contested'
+  AND f.payload->>'kind' = 'contested_tension'
+ORDER BY times_referenced DESC, age DESC;
+```
+
+### 12.3 Published Form
+
+- Fully public, visible on the site
+- Updated on every new `contested_tension` publication
+- Ranked by two signals: **how often a tension is referenced** (importance)
+  and **how long it has remained unresolved** (hardness)
+- Each entry links to the underlying collaboration history
+
+### 12.4 Meta-Finding
+
+The apex's Synthesizer agent periodically publishes a meta-finding
+aggregating the Contention Map: which roots have the most tensions, which
+resources are most contested, which tensions persist longest. This is a
+regularly-updated public synthesis of where humanity's real problems lie.
+
+---
+
+## 13. Public Signal Pipeline
+
+The tree accepts public input without contamination. Individual voices
+never reach research logic; only distilled collective patterns do. The
+rose in the container: visible, admired, tended only by the tree.
+
+### 13.1 Principles
+
+- **Intake is not listening.** Raw submissions go to a bucket, not the
+  tree.
+- **Mass over individuals.** One person submitting 1,000 times counts as
+  one signal (dedup by content similarity, not by author).
+- **Transparent decisions.** Every signal either addressed, researched,
+  or dismissed — with reasoning published.
+- **Flood-resistant.** Organized astroturfing produces one theme, not a
+  pile of noise.
+
+### 13.2 Pipeline Stages
+
+```
+Stage 1: Intake (open)
+  - GitHub issue template with label `public-signal` (v1)
+  - Website form (v2)
+  - No login, no vetting at intake
+  - Submissions accumulate in a raw bucket (Supabase table or GitHub issues)
+
+Stage 2: Aggregation (scheduled)
+  - Runs weekly (or daily once volume justifies)
+  - LLM pass clusters submissions by semantic similarity
+    ("relocate them" / "move them out" / "disperse encampments" → one theme)
+  - Counts mass per cluster (dedupe by content)
+  - Extracts key phrases, produces word-cloud-style summary
+  - Publishes a `Signal Digest` finding to Supabase:
+      findings {
+        source_type: "public_signal",  -- new source type
+        confidence: "informational",   -- new tier, not quality-gated
+        payload: {
+          themes: [
+            { cluster: "...", mass: N, keywords: [...], sample_quotes: [...] }
+          ]
+        }
+      }
+
+Stage 3: Routing (apex)
+  - Apex reads the Signal Digest on its next cycle
+  - Tags each theme with a target tier (which root / category / seed)
+  - Emits `signal_routed` event per theme
+
+Stage 4: Consumption (target tier)
+  - Target tier reads the routed theme on its next cycle
+  - Decides:
+      a. already_addressed → cites existing finding, marks signal as answered
+      b. worth_researching → creates a task, assigns down-tier
+      c. out_of_scope      → dismisses with public reason (evil / illegal /
+                             not human-natural-world problem)
+      d. noise             → ignored but counted for transparency
+
+Stage 5: Feedback (public)
+  - All routing + consumption decisions are published events
+  - Public sees not just their suggestions but what the tree did with them
+  - Persistent themes that keep being submitted despite dismissal are
+    themselves a signal the tree (or Komatik for charter changes) should
+    revisit
+```
+
+### 13.3 New `source_type` and Confidence Tier
+
+- `findings.source_type` needs `public_signal` added
+- `findings.confidence` needs `informational` added (Signal Digests are
+  not quality-gated in the same way as research findings)
+
+### 13.4 New Event Types
+
+- `signal_submitted` — raw intake received
+- `signal_digested` — aggregation cycle published a digest
+- `signal_routed` — apex tagged themes with target tiers
+- `signal_decided` — target tier made a decision on a routed theme
+
+### 13.5 Out-of-Scope Inputs
+
+Submissions that are evil/illegal themselves (as opposed to suggesting
+evil/illegal work) are filtered at intake — not by the tree, but by
+standard content moderation on the intake surface. Everything that gets
+past intake is assumed to be legitimate input the aggregator can cluster.
+
+### 13.6 Charter-Level Suggestions
+
+Public signal about the tree itself — "add a new root for X," "your
+anti-scope is wrong" — does not go to the tree. It is routed to Komatik.
+The charter is human-set mission; tree operates under it. Changes to the
+charter are a Komatik decision informed by public signal, not an apex
+decision.
