@@ -8,7 +8,7 @@
 ## 1. Hierarchy
 
 ```
-Yggdrasil (the world tree)
+Apex: Yggdrasil HQ (cross-root synthesis + Mission Guardian)
   |
   +-- Root: Basic Needs
   |     +-- Category: Energy
@@ -35,11 +35,12 @@ Yggdrasil (the world tree)
         +-- Category: Digital Access
 ```
 
-| Level         | Count | What it is                              |
-|---------------|-------|-----------------------------------------|
-| Root          | 4     | Broad pillar of human need              |
-| Root Category | 14    | Problem domain within a root            |
-| Seed          | N     | Geographically scoped research instance |
+| Level         | Count | What it is                                              |
+|---------------|-------|---------------------------------------------------------|
+| Apex          | 1     | Cross-root synthesis; Mission Guardian against charter  |
+| Root          | 4     | Broad pillar of human need                              |
+| Root Category | 14    | Problem domain within a root                            |
+| Seed          | N     | Geographically scoped research instance                 |
 
 ---
 
@@ -47,7 +48,28 @@ Yggdrasil (the world tree)
 
 Each tier runs its own container(s) with a distinct role.
 
-### Tier 1 — Root HQ (4 containers)
+### Tier 1 — Apex / Yggdrasil HQ (1 container)
+
+**Purpose:** Cross-root synthesis and Mission Guardian duties. The only tier
+with a tree-wide view.
+
+- Reads validated findings across all 4 Root HQs
+- Detects cross-root patterns no single Root can see (shared drivers,
+  compounding effects, contested resources)
+- Reviews Root HQ work against `docs/charter.md` for mission drift
+- Emits `mission_drift_flagged` and `cross_root_pattern_detected` events
+- No authority — publishes knowledge and signals, not commands. Drift flags
+  are signals Roots can ignore. Public sees the flags too.
+
+**Workload profile:**
+- Lightweight: 2 agents (Mission Guardian + Synthesizer)
+- Daily cycle, or on significant upstream event (root-level promoted finding)
+- Opus models — whole-tree context, deepest reasoning
+- ~0.5 vCPU, 2 GB RAM, scale-to-zero between runs
+
+Full spec in §10.
+
+### Tier 2 — Root HQ (4 containers)
 
 **Purpose:** Cross-category mission governance and synthesis.
 
@@ -63,7 +85,7 @@ Each tier runs its own container(s) with a distinct role.
 - Needs smart models (Sonnet/Opus) — making judgment calls
 - ~0.5 vCPU, 2 GB RAM, scale-to-zero between runs
 
-### Tier 2 — Root Category (14 containers)
+### Tier 3 — Root Category (14 containers)
 
 **Purpose:** Domain-specific knowledge coordination between root and seeds.
 
@@ -79,7 +101,7 @@ Each tier runs its own container(s) with a distinct role.
 - Mid-tier models (Sonnet for review, Haiku for routing)
 - ~0.5-1 vCPU, 2-4 GB RAM, scale-to-zero between runs
 
-### Tier 3 — Seed (N containers)
+### Tier 4 — Seed (N containers)
 
 **Purpose:** The actual research work. Deep, geographically scoped investigation.
 
@@ -299,15 +321,17 @@ Three cost buckets, all dynamic.
 ### 4.1 Cloud Compute
 
 Containers run on cloud infrastructure. Recommended: Fargate Spot for
-intermittent workloads (Tiers 1-2), Hetzner or Fargate for seeds.
+intermittent workloads (Apex, Root HQ, and Category tiers), Hetzner or
+Fargate for seeds.
 
 | Tier | Per Unit/mo | Units | Subtotal |
 |------|------------|-------|----------|
+| Apex (0.5 vCPU, 2 GB, ~1 hr/day) | $1-2 | 1 | $1-2 |
 | Root HQ (0.5 vCPU, 2 GB, ~2 hr/day) | $1-2 | 4 | $4-8 |
 | Category (0.5-1 vCPU, 2-4 GB, ~3 hr/day) | $2-4 | 14 | $28-56 |
 | Seed — periodic (4 hr/day) | $6-20 | per seed | varies |
 | Seed — always-on | $16-35 | per seed | varies |
-| **Infrastructure subtotal** | | | **$32-64 + seeds** |
+| **Infrastructure subtotal** | | | **$33-66 + seeds** |
 
 ### 4.2 LLM API
 
@@ -328,6 +352,7 @@ The primary variable cost. Model choice is the biggest lever.
 
 | Tier | Calls/day | Model mix | Est. monthly |
 |------|-----------|-----------|-------------|
+| Apex (x1) | 5-15/day | Opus (+ Sonnet for lighter work) | $15-40 |
 | Root HQ (x4) | 20-50/day each | Sonnet + Opus | $40-100 |
 | Category (x14) | 30-100/day each | Haiku + Sonnet | $100-300 |
 | Seed (low budget) | 50-200/day | Mini + Flash | $15-30 |
@@ -348,11 +373,11 @@ The primary variable cost. Model choice is the biggest lever.
 
 | Component | Low estimate | High estimate |
 |-----------|-------------|---------------|
-| Compute (4 roots + 14 categories) | $32 | $64 |
-| LLM API (roots + categories) | $140 | $400 |
+| Compute (1 apex + 4 roots + 14 categories) | $33 | $66 |
+| LLM API (apex + roots + categories) | $155 | $440 |
 | Supabase | $10 | $25 |
 | Storage | $5 | $15 |
-| **Total** | **$187/mo** | **$504/mo** |
+| **Total** | **$203/mo** | **$546/mo** |
 
 **Per seed (sponsor-funded, variable):**
 
@@ -466,7 +491,8 @@ This serves as the template for all other roots, categories, and seeds.
 - [ ] Collaboration Protocol event types and state schema
 - [ ] Contention Map data model and publishing cadence
 - [ ] Public Signal intake surface (GitHub issue template for v1)
-- [ ] Sync §1 Hierarchy and §2 Container Tiers to include Apex tier
+- [x] Sync §1 Hierarchy and §2 Container Tiers to include Apex tier
+- [x] Sync §4 Cost Model to include Apex tier
 - [ ] Charter Section 2 (Scope rationale) and Section 6 (Quality bar) — see `charter.md`
 - [ ] Cloud provider selection (Fargate Spot vs Hetzner vs hybrid)
 - [ ] Sponsor dashboard / portal
