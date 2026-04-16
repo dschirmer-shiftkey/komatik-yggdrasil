@@ -1,0 +1,44 @@
+id: "apex"
+name: "Yggdrasil HQ"
+type: "apex"
+status: "planned"
+
+mission_summary: >
+  Sit atop the four Root HQs. Synthesize cross-root patterns that no
+  single Root can see. Guard the charter (docs/charter.md) against
+  drift in Root HQ work. Publish the Contention Map of irreconcilable
+  tensions as a secondary output. Route aggregated Public Signal to
+  the appropriate tier. No authority — publishes knowledge and
+  signals, not commands.
+
+watches_roots:
+  - basic-needs
+  - human-growth
+  - planet-and-life
+  - society-and-systems
+
+charter_path: "docs/charter.md"
+
+responsibilities:
+  - cross_root_synthesis           # §10.1 Synthesizer
+  - mission_drift_flagging         # §10.1 Mission Guardian
+  - contention_map_aggregation     # §12
+  - public_signal_routing          # §13.2 Stage 3
+  - root_vs_root_collaboration     # §11.2 (mediator tier)
+
+emits_events:
+  - cross_root_pattern_detected    # §10.4
+  - mission_drift_flagged          # §10.4
+  - potential_conflict             # §11.5 (for root-vs-root conflicts)
+  - collaboration_required         # §11.5
+  - signal_routed                  # §13.4
+
+sponsor:
+  status: "komatik-funded"
+  name: "Komatik"
+
+budget:
+  monthly_compute_usd: 40
+  source: "Komatik Infrastructure"
+
+created: "2026-04-16"

@@ -1,0 +1,34 @@
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "provider": "anthropic",
+      "api_key": "${ANTHROPIC_API_KEY}",
+      "weight": 100,
+      "models": [
+        "claude-opus-4-20250514",
+        "claude-sonnet-4-20250514"
+      ],
+      "rate_limit": {
+        "rpm": 5,
+        "tpm": 80000
+      }
+    }
+  ],
+  "virtual_keys": [
+    {
+      "name": "apex-yggdrasil-hq",
+      "key": "${SEED_VIRTUAL_KEY}",
+      "allowed_models": [
+        "claude-opus-4-20250514",
+        "claude-sonnet-4-20250514"
+      ],
+      "default_model": "claude-opus-4-20250514",
+      "budget": {
+        "max_cost_monthly": 40,
+        "max_rpm": 5,
+        "max_tpm": 80000
+      }
+    }
+  ]
+}
