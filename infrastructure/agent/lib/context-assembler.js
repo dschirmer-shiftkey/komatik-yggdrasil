@@ -13,7 +13,19 @@
 import fs from "node:fs";
 import yaml from "js-yaml";
 import path from "node:path";
-import { getSupabase, queryTreeFindings } from "@komatik/shared/supabase";
+
+// Lazy-load Supabase to avoid hard dependency in tests and environments
+// where the shared module isn't installed (CI runs per-service).
+let _supabaseModule = null;
+async function getSupabaseModule() {
+  if (_supabaseModule) return _supabaseModule;
+  try {
+    _supabaseModule = await import("@komatik/shared/supabase");
+    return _supabaseModule;
+  } catch {
+    return null;
+  }
+}
 
 const CHARS_PER_TOKEN = 4;
 const CATEGORY_FINDINGS_PATH = "/workspace/category/SHARED-FINDINGS.md";
@@ -222,7 +234,10 @@ function formatWorkflowSteps(steps) {
  * root, and geographic peers. This is the "read up before you work" step.
  */
 async function loadTreeKnowledge() {
-  const supabase = getSupabase();
+  const mod = await getSupabaseModule();
+  if (!mod) return "";
+
+  const supabase = mod.getSupabase();
   if (!supabase) return "";
 
   const categoryId = process.env.CATEGORY_ID;
@@ -245,7 +260,7 @@ async function loadTreeKnowledge() {
   } catch { /* non-fatal */ }
 
   try {
-    const results = await queryTreeFindings(supabase, {
+    const results = await mod.queryTreeFindings(supabase, {
       categoryId,
       rootId,
       geographicScope: geoScope,
