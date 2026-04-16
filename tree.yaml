@@ -1,13 +1,14 @@
-# tree.yaml — Yggdrasil Branch & Seedling Registry
+# tree.yaml — Yggdrasil World Tree Registry
 #
 # Single source of truth for the tree hierarchy.
 # komatik.ai website consumes this at build time via GitHub raw content.
 # CI validates that every seedling listed here has a matching directory.
 #
-# THE TREE METAPHOR
-#   Yggdrasil   = The world tree (this initiative)
-#   Branches    = Problem domains (Homelessness, Energy Poverty, etc.)
-#   Seedlings   = Geographically scoped instances on a branch
+# THE WORLD TREE
+#   Yggdrasil  = The world tree (this initiative)
+#   Trunks     = Broad categories (Basic Needs, Human Growth, Planet & Life, Society & Systems)
+#   Branches   = Problem domains (Energy, Housing, Health, etc.)
+#   Seedlings  = Geographically scoped instances on a branch
 #
 # ROOT TRIMMING — Granularity Governance
 #   Each branch defines a `scope_floor` — the minimum geographic scope for
@@ -20,21 +21,164 @@
 #     Broader scope, contains existing → Merge discussion
 #     Same scope, non-overlapping  → Allow (new seedling)
 
-branches:
-  energy-poverty:
-    name: "Energy Poverty"
-    description: "Distributed renewable generation and open hardware for communities without reliable electricity."
-    icon: "zap"
-    scope_floor: "region"
-    scope_levels: ["global", "continental", "region", "national"]
-    seedlings:
-      - "001-energy"
+trunks:
 
-  homelessness:
-    name: "Homelessness"
-    description: "Data-driven approaches to understanding and reducing homelessness in specific urban areas."
-    icon: "home"
-    scope_floor: "metro"
-    scope_levels: ["global", "continental", "national", "state", "metro"]
-    seedlings:
-      - "002-homelessness-la"
+  # ─────────────────────────────────────────────────────────────────────
+  # BASIC NEEDS — Survival-level problems: what every human requires
+  # ─────────────────────────────────────────────────────────────────────
+  basic-needs:
+    name: "Basic Needs"
+    description: "Survival-level problems — energy, shelter, food, water, health."
+    branches:
+
+      energy:
+        name: "Energy"
+        description: "Solving energy poverty through distributed renewable generation, open hardware, and community microgrids."
+        icon: "zap"
+        sdgs: [7]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings:
+          - "001-energy"
+
+      housing:
+        name: "Housing"
+        description: "Reducing homelessness and expanding affordable housing through data-driven research and evidence-based interventions."
+        icon: "home"
+        sdgs: [1, 11]
+        scope_floor: "metro"
+        scope_levels: ["global", "continental", "national", "state", "metro"]
+        seedlings:
+          - "002-homelessness-la"
+
+      hunger:
+        name: "Hunger"
+        description: "Reducing food insecurity, food loss, and malnutrition through open agricultural technology and supply chain optimization."
+        icon: "wheat"
+        sdgs: [2]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      water:
+        name: "Water"
+        description: "Open-source water purification, collection, and sanitation systems for communities without safe water access."
+        icon: "droplets"
+        sdgs: [6]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      health:
+        name: "Health"
+        description: "Physical and behavioral health — open diagnostics, treatment protocols, mental health, addiction, elder care, and health system strengthening."
+        icon: "heart-pulse"
+        sdgs: [3]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+  # ─────────────────────────────────────────────────────────────────────
+  # HUMAN GROWTH — Development, opportunity, and dignity
+  # ─────────────────────────────────────────────────────────────────────
+  human-growth:
+    name: "Human Growth"
+    description: "Education, economic opportunity, and equality — the foundations of human development."
+    branches:
+
+      education:
+        name: "Education"
+        description: "AI-native learning tools, literacy programs, and vocational training for limited-infrastructure regions."
+        icon: "graduation-cap"
+        sdgs: [4]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      economic-opportunity:
+        name: "Economic Opportunity"
+        description: "Poverty reduction through microfinance research, fair trade analysis, job creation modeling, and open economic tools."
+        icon: "trending-up"
+        sdgs: [1, 8]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      equality:
+        name: "Equality"
+        description: "Evidence-based research on reducing gender, racial, and disability inequalities in access to services and opportunity."
+        icon: "scale"
+        sdgs: [5, 10]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "national"]
+        seedlings: []
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PLANET & LIFE — Environmental stewardship
+  # ─────────────────────────────────────────────────────────────────────
+  planet-and-life:
+    name: "Planet & Life"
+    description: "Climate action, ocean health, and ecosystem preservation."
+    branches:
+
+      climate:
+        name: "Climate"
+        description: "Carbon sequestration, climate adaptation, disaster resilience, early warning systems, and community resilience planning."
+        icon: "thermometer-sun"
+        sdgs: [13]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      oceans:
+        name: "Oceans"
+        description: "Marine conservation, plastic pollution reduction, sustainable fisheries, and coastal ecosystem protection."
+        icon: "waves"
+        sdgs: [14]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region"]
+        seedlings: []
+
+      ecosystems:
+        name: "Ecosystems"
+        description: "Biodiversity preservation, reforestation, soil health, and wildlife conservation through open monitoring and modeling."
+        icon: "trees"
+        sdgs: [15]
+        scope_floor: "region"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SOCIETY & SYSTEMS — Structural and institutional challenges
+  # ─────────────────────────────────────────────────────────────────────
+  society-and-systems:
+    name: "Society & Systems"
+    description: "Peace, governance, community connection, and digital access."
+    branches:
+
+      peace:
+        name: "Peace"
+        description: "Conflict resolution, refugee support, governance transparency, and anti-corruption research."
+        icon: "shield"
+        sdgs: [16]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []
+
+      community:
+        name: "Community"
+        description: "Everything that makes a place livable — civic engagement, cultural preservation, arts and heritage, animal welfare, disaster preparedness, transportation and mobility, urban planning, and public spaces."
+        icon: "users"
+        sdgs: [11]
+        scope_floor: "metro"
+        scope_levels: ["global", "continental", "national", "state", "metro"]
+        seedlings: []
+
+      digital-access:
+        name: "Digital Access"
+        description: "Closing the digital divide through open infrastructure, connectivity research, and information access tools."
+        icon: "wifi"
+        sdgs: [9]
+        scope_floor: "national"
+        scope_levels: ["global", "continental", "region", "national"]
+        seedlings: []

@@ -1,4 +1,4 @@
-# Branch: Homelessness
+# Branch: Housing
 
 > Data-driven approaches to understanding and reducing homelessness in specific
 > urban areas.
