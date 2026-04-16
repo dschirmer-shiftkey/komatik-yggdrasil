@@ -81,3 +81,45 @@ jobs:
             fi
           done
           echo "TOKENS.md format check complete"
+
+  build:
+    name: Verify Docker Builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all service images
+        run: |
+          cd infrastructure
+          docker compose build --no-cache 2>&1 | tail -20
+
+  packages:
+    name: Verify Node Dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [agent, gateway, publisher, scheduler]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: infrastructure/${{ matrix.service }}
+        run: npm ci
+
+      - name: Syntax check (recursive)
+        working-directory: infrastructure/${{ matrix.service }}
+        run: |
+          find . -name '*.js' -not -path '*/node_modules/*' -not -path '*/test/*' -exec node --check {} +
+
+      - name: Run tests
+        working-directory: infrastructure/${{ matrix.service }}
+        run: |
+          if [ -d test ]; then
+            npm test
+          else
+            echo "No tests for ${{ matrix.service }}"
+          fi

@@ -13,42 +13,60 @@ Changes here affect every Seedling.
 ### Building Images
 
 ```bash
-# Build the gateway image
+# Build all service images at once
+docker compose --project-directory . -f infrastructure/compose.yaml build
+
+# Or build individually
 docker build -t komatik/seedling-gateway infrastructure/gateway/
-
-# Build the base agent image
 docker build -t komatik/seedling-agent infrastructure/agent/
-
-# Build the publisher service
 docker build -t komatik/seedling-publisher infrastructure/publisher/
-
-# Build the scheduler service
 docker build -t komatik/seedling-scheduler infrastructure/scheduler/
+docker build -t komatik/seedling-bifrost infrastructure/bifrost/
 ```
 
 ### Running a Seedling Locally
 
 ```bash
-cd seedlings/001-energy
-
-# Copy and configure environment
-cp ../../infrastructure/.env.example .env
-# Edit .env with your LLM API keys and GitHub token
+# From the repo root:
+cp .env.example .env
+# Edit .env — fill in POSTGRES_PASSWORD, at least one LLM API key, GITHUB_TOKEN
 
 # Start the full stack
-docker compose -f ../../infrastructure/compose.yaml -f config/compose.override.yaml up
+docker compose --project-directory . \
+  -f infrastructure/compose.yaml \
+  -f seedlings/001-energy/config/compose.override.yaml up
 ```
 
-The compose override mounts Seedling-specific configs (MISSION.md, agent YAMLs,
-Bifrost budget) into the base containers.
+> **Important**: Always run compose from the repo root with `--project-directory .`
+> because bind-mount paths in compose.yaml are relative to `infrastructure/`, while
+> `.env` is at the repo root. The `--project-directory` flag ensures compose finds
+> both correctly.
+
+The compose override mounts Seedling-specific configs (MISSION.md, soul files,
+agent YAMLs, Bifrost config) into the base containers.
 
 ### Key Architecture Rules
 
 1. **One process per container** — never pack multiple agents into one container
-2. **Gateway is the only coordinator** — agents communicate through the gateway, never directly
+2. **Bifrost is the only LLM egress** — all LLM calls route through Bifrost, no exceptions
 3. **Publisher is the only GitHub writer** — no other service holds GitHub credentials
-4. **Bifrost is the only LLM egress** — all LLM calls route through Bifrost, no exceptions
-5. **PostgreSQL per Seedling** — no shared databases between Seedlings
+4. **PostgreSQL per Seedling** — no shared databases between Seedlings
+5. **Agents access DB directly** (current) — see [ADR-001](docs/adr/001-agent-gateway-bypass.md); gateway tools exist but agents bypass them for now
+6. **Gateway enforces RBAC** — the 17-tool HTTP API surface at `/api/tool` is deny-by-default for unknown agents
+7. **Atomic step claiming** — agents use `SELECT FOR UPDATE SKIP LOCKED` to prevent race conditions
+8. **Transaction safety** — post-LLM writes (decision log, usage telemetry) are wrapped in DB transactions
+
+### Network Isolation
+
+Docker Compose defines two networks:
+
+| Network | Services | Purpose |
+|---------|----------|---------|
+| `backend-net` | DB, Gateway, Scheduler, Publisher, Agents | Internal state + orchestration |
+| `agent-net` | Agents, Bifrost, Gateway | LLM egress path |
+
+Agents are on both networks (temporary — see ADR-001). Publisher cannot reach Bifrost
+(different networks); token usage data comes from the DB `llm_usage` table.
 
 ## Working on a Seedling (`seedlings/NNN-name/`)
 
@@ -58,9 +76,9 @@ Each Seedling directory contains mission-specific overrides:
 
 | File | Who Modifies | Notes |
 |------|-------------|-------|
-| `config/agents/*.yaml` | Human or agent-tuner | Domain-tuned system prompts per role |
-| `config/bifrost.json` | Human | Budget cap and model routing for this Seedling |
-| `config/compose.override.yaml` | Human | Container config overrides |
+| `config/agents/*.yaml` | Human or agent-tuner | `system_prompt`, `preferred_model`, `max_tokens_per_session`, `task_profiles` — all wired into LLM calls |
+| `config/bifrost.json` | Human | Budget cap, model routing, provider config (env vars substituted at runtime) |
+| `config/compose.override.yaml` | Human | Container config overrides — paths relative to `infrastructure/` |
 | `AGENTS.md` | Human | Seedling-specific agent protocol adjustments |
 
 ### Files You Must NOT Modify Directly
@@ -68,7 +86,7 @@ Each Seedling directory contains mission-specific overrides:
 | File | Who Modifies | Notes |
 |------|-------------|-------|
 | `MISSION.md` | David (human only) | Immutable mission statement — agents read, never write |
-| `TOKENS.md` | Publisher service | Auto-generated from Bifrost metrics |
+| `TOKENS.md` | Publisher service | Auto-generated from DB `llm_usage` table |
 | `FINDINGS.md` | Documentation agent | Accumulated research — append-only by agents |
 
 ### Adding a New Seedling
@@ -77,20 +95,32 @@ Each Seedling directory contains mission-specific overrides:
 2. Write `MISSION.md` — the immutable mission statement
 3. Copy `AGENTS.md` from an existing Seedling and customize
 4. Create `config/agents/*.yaml` — 6 agent configs with domain-tuned prompts
-5. Create `config/bifrost.json` — set the monthly budget cap
-6. Create `config/compose.override.yaml` — mount the configs
+5. Create `config/bifrost.json` — set the monthly budget cap (uses `${ENV_VAR}` placeholders)
+6. Create `config/compose.override.yaml` — mount configs (paths relative to `infrastructure/`)
 7. Create placeholder `FINDINGS.md` and `TOKENS.md`
-8. Add the Seedling to the registry in the root `README.md`
-9. Update `projects/komatik-yggdrasil/STATUS.md` in the komatik-agents hub
+8. Create `RESEARCH/`, `MODELS/`, `PROTOTYPES/` directories (with `.gitkeep`)
+9. Add the Seedling to the registry in the root `README.md`
+10. Update `projects/komatik-yggdrasil/STATUS.md` in the komatik-agents hub
 
 ## Testing
 
-### CI Validation
+### Unit Tests
 
-The `.github/workflows/validate.yml` workflow checks:
-- Every Seedling has required files (MISSION.md, AGENTS.md, TOKENS.md, FINDINGS.md)
-- TOKENS.md format is valid (if non-empty)
-- Infrastructure Dockerfiles parse correctly
+```bash
+# Agent tests (context assembler, decisions module)
+cd infrastructure/agent && npm ci && npm test
+
+# Gateway tests (RBAC policy engine, tool registry)
+cd infrastructure/gateway && npm ci && npm test
+```
+
+### CI Validation (`.github/workflows/validate.yml`)
+
+The CI workflow runs three jobs:
+
+1. **Structure check** — every Seedling has MISSION.md, AGENTS.md, TOKENS.md, FINDINGS.md; TOKENS.md format valid
+2. **Docker build** — `docker compose build` for all services
+3. **Node packages** — `npm ci`, recursive syntax check (`find . -name '*.js' ... -exec node --check`), and `npm test` for services with tests
 
 ### Local Validation
 
@@ -102,13 +132,28 @@ for dir in seedlings/*/; do
   done
 done
 
-# Validate Docker build (no push)
-docker compose -f infrastructure/compose.yaml config --quiet
+# Validate Docker config (no build)
+docker compose --project-directory . -f infrastructure/compose.yaml config --quiet
+
+# Run all tests
+(cd infrastructure/agent && npm test) && (cd infrastructure/gateway && npm test)
 ```
 
 ## Git Workflow
 
-- **Branch**: `main` is the default and only long-lived branch
-- **PRs**: Required for infrastructure changes; Seedling content updates can go direct
+- **Branch**: `feat/agent-memory-loop` is the current development branch
+- **PRs**: Required for all changes — infrastructure and Seedling content alike
 - **Agent outputs**: Committed by the Publisher service during live operation
 - **Human changes**: Standard PR workflow — branch, commit, push, review, merge
+- **Naming**: `fix/` for bugs, `feat/` for features, `docs/` for documentation
+
+## Configuration Files Reference
+
+| File | Mounted To | Used By | Purpose |
+|------|-----------|---------|---------|
+| `config/context-budget.yaml` | `/workspace/config/` | Agent runner | Token budget per context section |
+| `config/agent-capacity.yaml` | `/workspace/config/` | Agent runner, Gateway | Max concurrent steps per role |
+| `config/rbac-policies.yaml` | `/app/config/` | Gateway | Role → tool authorization matrix |
+| `config/agents/<role>.yaml` | `/workspace/config/agent.yaml` | Agent runner | Per-agent system prompt, model, token limits |
+| `config/bifrost.json` | `/app/config.template.json` | Bifrost entrypoint | LLM provider config (env vars substituted at boot) |
+| `.env` | (compose env_file) | All services | API keys, passwords, service URLs |
