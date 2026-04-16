@@ -8,8 +8,7 @@
 > document into context when reviewing Root HQ work for mission drift. Humans
 > reviewing the system read it to understand what Yggdrasil is accountable to.
 >
-> **Status:** Living document. Sections 1, 3, 4, and 5 are settled (2026-04-16).
-> Sections 2 and 6 are outlined but not yet written.
+> **Status:** Living document. All sections complete as of 2026-04-16.
 
 ---
 
@@ -42,16 +41,65 @@ forever.
 
 ## 2. Scope — What We Work On
 
-> **Gap.** To be written. Material exists in the README and system-design
-> document describing the 4 Roots (Basic Needs, Human Growth, Planet & Life,
-> Society & Systems) and 14 Categories beneath them. This section needs to
-> articulate *why these* and the principle by which new categories are admitted
-> to the tree over time.
+### 2.1 The taxonomy
 
-Placeholder summary: Yggdrasil organizes work into 4 Roots and 14 Categories.
-Any seed that fits under one of these roots is in scope. The taxonomy is
-SDG-aligned and designed to cover the breadth of human and natural-world
-problems.
+Yggdrasil organizes work into 4 Roots, 14 Categories, and N Seeds. The
+current taxonomy lives in `tree.yaml`:
+
+- **Basic Needs** (survival-level) — Energy, Housing, Hunger, Water, Health
+- **Human Growth** (development) — Education, Economic Opportunity, Equality
+- **Planet & Life** (environment) — Climate, Oceans, Ecosystems
+- **Society & Systems** (structure) — Peace, Community, Digital Access
+
+### 2.2 Why these fourteen
+
+The 14 are chosen so that together they cover the breadth of human and
+natural-world problems. Every UN Sustainable Development Goal 1-16 maps
+to at least one category. Roots cluster Categories by the kind of
+concern: survival, development, environment, structure. Each category is
+broad enough to host many geographically-scoped seeds and narrow enough
+to hold research focus; each has a **scope floor** (minimum geographic
+scope per `tree.yaml`) below which contributors join an existing seed
+rather than creating new ones.
+
+This is not a claim that these are the only legitimate domains. It is a
+claim that this specific set covers the charter's mission — humanity and
+the natural world — with coherent internal structure and no major gaps.
+Abundance of existing research in a category (e.g., cancer in Health,
+carbon capture in Climate) is irrelevant to inclusion; rich prior work
+is raw material, not a disqualifier.
+
+### 2.3 Admitting new categories
+
+A new category is admitted only when all four hold:
+
+1. A proposed seed cannot reasonably fit any existing category without
+   losing its meaning
+2. Enough proposed or potential seeds exist to warrant shared synthesis
+   (a category with one seed adds coordination overhead without value —
+   put it in the nearest fit)
+3. The category is not a restatement of an existing one at a different
+   granularity
+4. Its work passes the charter's anti-scope (§3) and guiding value (§1)
+
+Category admission is a **Komatik decision** informed by Public Signal
+(§5). The tree does not admit its own categories — it operates under
+the taxonomy given to it.
+
+### 2.4 Retiring or splitting
+
+A category may be retired if its problem space becomes fully absorbed by
+neighbors, or split if its seeds diverge into two coherent sub-domains
+with minimal overlap. Neither is automatic; both are Komatik decisions
+with public reasoning.
+
+### 2.5 Seeds
+
+Seeds are the geographically-scoped research instances within categories.
+They are admitted by sponsorship (§5), not by taxonomy — any sponsor can
+propose a seed under any category as long as it respects the category's
+scope floor and passes anti-scope (§3). See `CONTRIBUTING.md` for the
+seed proposal process.
 
 ---
 
@@ -179,24 +227,132 @@ channel.
 
 ## 6. What a Good Finding Looks Like
 
-> **Gap.** To be written. This section needs to codify the quality bar that
-> categories enforce on seed findings, roots enforce on category findings, and
-> apex enforces on root findings. Must be specific enough that the Mission
-> Guardian can apply it as a rubric.
+This section defines the quality bar Yggdrasil enforces across all tiers.
+Categories apply it to seed findings before promotion. Roots apply it to
+category synthesis. Apex applies it to root synthesis. The Mission
+Guardian uses it as its rubric for mission-drift review.
 
-Candidate dimensions to develop:
+### 6.1 Universal requirements
 
-- Primary source citations required
-- Claims scoped by stated conditions, not absolute
-- Evidence-to-conclusion traceable
-- Reproducible methodology
-- Falsifiable propositions
-- Confidence calibrated to evidence strength
+Every finding must satisfy all seven. A finding missing any one is
+returned to its originating agent with specific feedback; it is not
+promoted.
+
+1. **Cited to primary sources.** Every factual claim traces to a primary
+   source — peer-reviewed research, government or NGO dataset, original
+   reporting, direct observation, or an earlier validated finding in the
+   tree. Secondary summaries are permitted only when they themselves
+   cite back. URLs, DOIs, or persistent identifiers required.
+
+2. **Scoped by stated conditions.** Claims name the conditions under
+   which they hold — time period, geography, population, methodology.
+   No implicit universals. "Rent control reduces displacement in LA
+   2010-2024" is valid; "Rent control reduces displacement" is not.
+
+3. **Evidence-to-conclusion traceable.** A reader can follow the line
+   from cited evidence to each conclusion drawn. Inferential leaps are
+   explicit. Any reasoning that goes beyond what sources directly
+   support is flagged as the finding's own synthesis.
+
+4. **Confidence calibrated.** The claimed confidence
+   (preliminary / validated / contested / retracted) matches the evidence
+   weight. One study is preliminary. Multi-study convergence with
+   consistent methodology can be validated. A single study that
+   contradicts established literature must be marked as such.
+
+5. **Reproducible.** Methodology is described specifically enough that
+   another researcher — human or AI — could reproduce the finding's
+   reasoning given the same sources.
+
+6. **Falsifiable.** The finding names what would, in principle, disprove
+   it. "Housing First reduces chronic homelessness" is falsifiable (you
+   could show it doesn't). "Housing First is the right thing to do" is
+   not — that's a position, not a proposition. §4.7 governs this.
+
+7. **Neutral in voice.** Describes evidence and tradeoffs, not positions.
+   No policy recommendations. No advocacy for or against specific
+   actors. §4.7 governs this absolutely.
+
+### 6.2 Additional requirements by tier
+
+**Category-promoted findings** must additionally:
+- Corroborate or contend with existing category findings — link the two
+  if overlap exists. Silent duplicates indicate poor read-up.
+- Offer insight that travels beyond the originating seed. Purely local
+  facts stay at the seed; the category promotes methodology patterns,
+  intervention taxonomies, and transferable data methods.
+
+**Root-synthesized findings** must additionally:
+- Genuinely span 2+ categories, not repackage single-category work.
+- Cite the specific category findings synthesized from; each cited
+  category finding must itself be validated. Synthesis on preliminary
+  downstream findings must flag the dependency.
+
+**Apex-synthesized findings** must additionally:
+- Genuinely span 2+ roots (single-root patterns belong at the Root tier).
+- Populate `findings.spans_roots` with the roots involved. A
+  cross-root finding with one root in `spans_roots` is malformed.
+
+**Contested tension findings** (from the Collaboration Protocol) must
+additionally:
+- Cite both positions' source findings. A contested tension without
+  pointers to the underlying conflict is reconciliation-theater.
+- Name the structural reason for irreconcilability. "They disagree" is
+  not a structural reason. "A prioritizes efficiency under scarce
+  capital; B prioritizes equity under slow trust-building — different
+  constraints" is.
+
+**Mission drift flags** (from the apex Mission Guardian) must
+additionally:
+- Cite the specific charter section violated (e.g., "§4.7", "§3").
+- Cite the specific Root finding(s) exhibiting the drift. Never flag a
+  Root abstractly.
+- Assign severity: `minor` (worth noting), `moderate` (worth attention),
+  or `serious` (charter clearly violated).
+
+### 6.3 Common failure modes to reject
+
+Reviewers at every tier — and the Mission Guardian — flag and reject
+findings that exhibit:
+
+- **Advocacy creep.** Conclusions that shift from describing evidence
+  into recommending action. Red-flag words: "should," "must," "needs
+  to," "we recommend," "the right thing to do."
+- **Implicit universals.** Claims without stated conditions. "X works"
+  is not a finding; "X works under conditions C" is.
+- **Citation inflation.** Long citation lists not pinned to specific
+  claims. Every citation should support a named claim.
+- **Mushy synthesis.** Especially in reconciled findings: "both are
+  partially right" without naming which conditions favor which.
+- **Survivorship citations.** Citing only studies that support the
+  claim when contradicting studies are findable. Reviewers spot-check
+  for missing counter-evidence.
+- **Second-order speculation.** Conclusions beyond what the cited
+  evidence supports.
+- **Prototype-as-deployment.** Artifacts that read as shippable
+  products rather than teaching demonstrations. §4.8 governs this.
+- **Commercial tilt.** Research direction or conclusion that would
+  benefit a specific entity's product, market position, or
+  competitive interest. §4.9 governs this.
+
+### 6.4 What good looks like
+
+A finding that meets the bar can be read by a skeptical expert without
+Yggdrasil context and understood cleanly. It states what it claims, what
+it is based on, what it is **not** claiming, what would change its
+conclusion, and which tier produced it. It is boring in a specific way —
+neither overclaiming nor hedging into meaninglessness. It would hold up
+to adversarial review from a peer doing the same work.
+
+Findings that fail are honest about failure: marked preliminary, tagged
+for review, superseded as evidence shifts, retracted when proven wrong.
+Retraction is not shameful; pretending certainty you do not have is.
 
 ---
 
 ## Change Log
 
 - **2026-04-16** — initial drafting session. Sections 1 (Mission + Guiding
-  Value), 3 (Anti-Scope), 4 (Principles), and 5 (Accountability) locked.
-  Sections 2 (Scope rationale) and 6 (Quality bar) outlined.
+  Value), 3 (Anti-Scope), 4 (Principles), and 5 (Accountability) locked
+  first. Sections 2 (Scope rationale) and 6 (Quality bar) filled in the
+  same day to complete the charter.
