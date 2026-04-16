@@ -1,12 +1,12 @@
-# Yggdrasil — Seedling Agent Collective Protocol
+# Yggdrasil — Seed Agent Collective Protocol
 
-> Defines how the 6-agent collective operates within each Seedling.
-> Every Seedling follows this protocol. Mission-specific context comes
-> from the Seedling's own MISSION.md and agent configs.
+> Defines how the 6-agent collective operates within each Seed.
+> Every Seed follows this protocol. Mission-specific context comes
+> from the Seed's own MISSION.md and agent configs.
 
 ## The Collective
 
-Each Seedling runs 6 specialized agents working as a coordinated team.
+Each Seed runs 6 specialized agents working as a coordinated team.
 No single agent has full autonomy — the collective self-regulates through
 the Mission agent's oversight and the workflow engine's step dependencies.
 
@@ -21,7 +21,7 @@ the Mission agent's oversight and the workflow engine's step dependencies.
 
 ## Workflow Cycle
 
-Seedlings operate in continuous research cycles managed by the Scheduler
+Seeds operate in continuous research cycles managed by the Scheduler
 service. Each cycle follows this flow:
 
 ```
@@ -51,7 +51,7 @@ breaker aborts the entire workflow after 5 total step failures.
 No output is published without Mission agent approval. The Mission agent
 checks every artifact against three criteria:
 
-1. **Alignment** — Does this advance the Seedling's stated mission?
+1. **Alignment** — Does this advance the Seed's stated mission?
 2. **Quality** — Is this rigorous enough for public consumption?
 3. **Neutrality** — Does this avoid political, commercial, or ideological bias?
 
@@ -77,7 +77,7 @@ block is found, it falls back to heuristic keyword matching.
 Each agent loads three layers of context at startup:
 
 1. **Soul file** (`souls/<role>.md`) — immutable behavioral directives for this role
-2. **Mission file** (`MISSION.md`) — the Seedling's mission statement
+2. **Mission file** (`MISSION.md`) — the Seed's mission statement
 3. **Agent YAML config** (`config/agents/<role>.yaml`) — tunable parameters:
    - `system_prompt` — domain-specific instructions prepended to the LLM system prompt
    - `preferred_model` — model passed to Bifrost (e.g., `claude-sonnet-4-20250514`)
@@ -153,7 +153,7 @@ The gateway exposes these tools at `POST /api/tool`:
 - **No external API calls** except through Bifrost (LLM proxy) and Publisher (GitHub)
 - **No secrets in outputs** — all published content is public
 - **No political positions** — agents present evidence, not opinions
-- **Budget enforcement** — Bifrost rejects requests that exceed the Seedling's budget cap
+- **Budget enforcement** — Bifrost rejects requests that exceed the Seed's budget cap
 - **Circuit breaker** — 5 consecutive failures trigger hard stop; requires manual review
 - **RBAC** — gateway enforces role-based tool access (deny by default for unknown agents)
 
@@ -169,7 +169,7 @@ Every LLM call routes through Bifrost, which tracks:
 
 Usage is also recorded in the `llm_usage` PostgreSQL table for local queries.
 These metrics auto-generate TOKENS.md — the public ledger of compute
-donated by Komatik to this Seedling.
+donated by Komatik to this Seed.
 
 ## File Ownership
 

@@ -5,7 +5,7 @@ defaults:
   max_context_tokens: 8000
   compaction_lookback_days: 7
   max_memory_tokens: 2000
-  max_branch_findings_tokens: 1500
+  max_category_findings_tokens: 1500
   max_active_tasks: 5
   max_recent_runs: 10
 

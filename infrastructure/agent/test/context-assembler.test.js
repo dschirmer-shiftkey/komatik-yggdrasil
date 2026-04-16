@@ -6,7 +6,7 @@ import path from "node:path";
 import {
   loadContextBudget,
   getBudgetForRole,
-  loadBranchFindings,
+  loadCategoryFindings,
 } from "../lib/context-assembler.js";
 
 describe("loadContextBudget", () => {
@@ -44,9 +44,9 @@ describe("getBudgetForRole", () => {
   });
 });
 
-describe("loadBranchFindings", () => {
+describe("loadCategoryFindings", () => {
   it("returns empty string when file does not exist", () => {
-    const result = loadBranchFindings("/nonexistent/SHARED-FINDINGS.md");
+    const result = loadCategoryFindings("/nonexistent/SHARED-FINDINGS.md");
     assert.equal(result, "");
   });
 
@@ -54,7 +54,7 @@ describe("loadBranchFindings", () => {
     const tmpFile = path.join(os.tmpdir(), "test-shared-findings-placeholder.md");
     fs.writeFileSync(tmpFile, "# Shared Findings\n\n*No shared findings yet*\n");
     try {
-      const result = loadBranchFindings(tmpFile);
+      const result = loadCategoryFindings(tmpFile);
       assert.equal(result, "");
     } finally {
       fs.unlinkSync(tmpFile);
@@ -65,8 +65,8 @@ describe("loadBranchFindings", () => {
     const tmpFile = path.join(os.tmpdir(), "test-shared-findings-real.md");
     fs.writeFileSync(tmpFile, "# Shared Findings\n\nHousing First reduces chronic homelessness by 80%.\n");
     try {
-      const result = loadBranchFindings(tmpFile);
-      assert.ok(result.includes("Branch Shared Knowledge"));
+      const result = loadCategoryFindings(tmpFile);
+      assert.ok(result.includes("Category Shared Knowledge"));
       assert.ok(result.includes("Housing First reduces"));
       assert.ok(result.includes("do not re-research"));
     } finally {
@@ -78,7 +78,7 @@ describe("loadBranchFindings", () => {
     const tmpFile = path.join(os.tmpdir(), "test-shared-findings-empty.md");
     fs.writeFileSync(tmpFile, "");
     try {
-      const result = loadBranchFindings(tmpFile);
+      const result = loadCategoryFindings(tmpFile);
       assert.equal(result, "");
     } finally {
       fs.unlinkSync(tmpFile);

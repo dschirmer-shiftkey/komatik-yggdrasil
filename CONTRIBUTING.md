@@ -7,12 +7,12 @@ domain experts, and anyone passionate about solving global problems are welcome.
 
 ### Research Contributions
 
-If you have expertise in a Seedling's mission area (energy, food systems, water,
+If you have expertise in a Seed's mission area (energy, food systems, water,
 health, education, climate, or community building):
 
-1. Open an issue in the relevant Seedling's directory describing your contribution
+1. Open an issue in the relevant Seed's directory describing your contribution
 2. Include references, data sources, or methodologies
-3. The Seedling's Community agent will triage and acknowledge your contribution
+3. The Seed's Community agent will triage and acknowledge your contribution
 4. Quality contributions are integrated into the research pipeline
 
 ### Code Contributions
@@ -27,16 +27,16 @@ For infrastructure improvements, new tools, or bug fixes:
 ### Reporting Issues
 
 - Use GitHub Issues for bugs, suggestions, or questions
-- Tag issues with the relevant Seedling codename (e.g., `seedling:energy`)
+- Tag issues with the relevant Seed codename (e.g., `seed:energy`)
 - Include as much context as possible
 
 ## Guidelines
 
-- **Mission alignment**: All contributions must align with the Seedling's MISSION.md
+- **Mission alignment**: All contributions must align with the Seed's MISSION.md
 - **Open access**: Do not submit proprietary data or code with restrictive licenses
 - **Respect**: This initiative exists to help people — keep discussions constructive
 - **Evidence-based**: Research contributions should cite sources and be reproducible
-- **No politics**: Seedlings take no political, ideological, or partisan positions
+- **No politics**: Seeds take no political, ideological, or partisan positions
 
 ## Licensing
 
@@ -51,43 +51,43 @@ Be kind. Be constructive. Remember that the goal is solving real problems for
 real people. Harassment, discrimination, and bad-faith participation will not
 be tolerated.
 
-## Proposing a New Seedling
+## Proposing a New Seed
 
-Anyone can propose a new seedling. Before proposing, check [tree.yaml](tree.yaml)
-to see existing branches and seedlings.
+Anyone can propose a new seed. Before proposing, check [tree.yaml](tree.yaml)
+to see existing categories and seeds.
 
 ### Scope Rules (Root Trimming)
 
-Each branch defines a **scope floor** — the minimum geographic granularity for
-a seedling. Below that level, contributors should join an existing seedling
+Each category defines a **scope floor** — the minimum geographic granularity for
+a seed. Below that level, contributors should join an existing seed
 rather than creating a new one.
 
 | Scenario | Example | What Happens |
 |----------|---------|-------------|
 | **Below scope floor** | "Van Nuys Homelessness" (floor is metro) | Redirected to contribute to LA Homelessness |
-| **Same scope, same geography** | Another "LA Homelessness" | Contribute to the existing seedling |
+| **Same scope, same geography** | Another "LA Homelessness" | Contribute to the existing seed |
 | **Broader scope, contains existing** | "California Homelessness" | Merge discussion — absorb or aggregate |
-| **Same scope, different geography** | "Tokyo Homelessness" alongside "LA Homelessness" | Allowed — new seedling |
-| **Different branch** | "LA Education" | Allowed — different problem domain |
+| **Same scope, different geography** | "Tokyo Homelessness" alongside "LA Homelessness" | Allowed — new seed |
+| **Different category** | "LA Education" | Allowed — different problem domain |
 
 ### Proposal Process
 
-1. Open a GitHub issue titled "Seedling Proposal: [Name]"
+1. Open a GitHub issue titled "Seed Proposal: [Name]"
 2. Include: problem statement, geographic scope, data sources, and why a new
-   seedling is needed (vs. contributing to an existing one)
+   seed is needed (vs. contributing to an existing one)
 3. A maintainer checks scope rules against `tree.yaml`
-4. If approved, the contributor (or maintainer) creates the seedling directory
+4. If approved, the contributor (or maintainer) creates the seed directory
    and submits a PR following the structure in the
    [development protocol](.cursor/rules/development-protocol.mdc)
 
 ### Alternative Ways to Contribute
 
-If your proposal overlaps with an existing seedling:
-- **Sponsor compute** — fund additional token budget for the seedling
+If your proposal overlaps with an existing seed:
+- **Sponsor compute** — fund additional token budget for the seed
 - **Contribute research** — open issues with data, case studies, or expertise
-- **Propose a different branch** — your geographic area may need a different
+- **Propose a different category** — your geographic area may need a different
   kind of help (energy, education, food security)
-- **Add to shared findings** — contribute to the branch-level knowledge base
+- **Add to shared findings** — contribute to the category-level knowledge base
 
 ## Questions?
 

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0"
+  },
+  "providers": [
+    {
+      "name": "anthropic",
+      "provider": "anthropic",
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "models": ["claude-sonnet-4-20250514"],
+      "weight": 100
+    },
+    {
+      "name": "openai",
+      "provider": "openai",
+      "apiKey": "${OPENAI_API_KEY}",
+      "models": ["gpt-4o", "gpt-4o-mini"],
+      "weight": 50
+    },
+    {
+      "name": "google",
+      "provider": "google",
+      "apiKey": "${GOOGLE_API_KEY}",
+      "models": ["gemini-2.0-flash"],
+      "weight": 50
+    }
+  ],
+  "virtualKeys": [
+    {
+      "name": "seed-001-energy",
+      "key": "${SEED_VIRTUAL_KEY}",
+      "budget": {
+        "maxCostPerMonth": 50.00,
+        "maxRequestsPerMinute": 20,
+        "maxTokensPerMinute": 80000
+      },
+      "allowedModels": [
+        "claude-sonnet-4-20250514",
+        "gpt-4o-mini",
+        "gemini-2.0-flash"
+      ]
+    }
+  ],
+  "defaults": {
+    "model": "gpt-4o-mini",
+    "maxRetries": 2,
+    "timeout": 60000
+  },
+  "metrics": {
+    "enabled": true,
+    "prometheus": {
+      "enabled": true,
+      "port": 9090
+    }
+  },
+  "logging": {
+    "level": "info",
+    "requestLogging": true,
+    "includeTokenCounts": true,
+    "includeCost": true
+  }
+}

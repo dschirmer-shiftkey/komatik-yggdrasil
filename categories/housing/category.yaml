@@ -1,0 +1,30 @@
+id: "housing"
+name: "Housing"
+type: "category"
+root: "basic-needs"
+status: "planned"
+
+mission_summary: >
+  Coordinate housing-related seeds, validate their findings, prevent
+  duplicate research, and maintain the shared knowledge base for all
+  seeds working on homelessness and affordable housing.
+
+seeds:
+  - "002-homelessness-la"
+
+scope_floor: "metro"
+scope_levels: ["global", "continental", "national", "state", "metro"]
+
+sdgs:
+  - 1   # No Poverty
+  - 11  # Sustainable Cities and Communities
+
+sponsor:
+  status: "komatik-funded"
+  name: "Komatik"
+
+budget:
+  monthly_compute_usd: 25
+  source: "Komatik Infrastructure"
+
+created: "2026-04-15"

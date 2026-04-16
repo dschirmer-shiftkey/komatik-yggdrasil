@@ -1,5 +1,5 @@
 /**
- * Seedling Gateway — MCP-compatible tool server with RBAC
+ * Seed Gateway — MCP-compatible tool server with RBAC
  *
  * On startup:
  *   1. Bind the HTTP server (health returns 503 until ready)
@@ -63,7 +63,7 @@ const server = http.createServer(async (req, res) => {
     }
     try {
       await pool.query("SELECT 1");
-      return sendJson(res, 200, { status: "healthy", service: "seedling-gateway", tools: Object.keys(TOOL_HANDLERS).length });
+      return sendJson(res, 200, { status: "healthy", service: "seed-gateway", tools: Object.keys(TOOL_HANDLERS).length });
     } catch (err) {
       return sendJson(res, 503, { status: "unhealthy", error: err.message });
     }
@@ -116,30 +116,30 @@ const server = http.createServer(async (req, res) => {
 });
 
 async function startup() {
-  console.log("[seedling-gateway] Running schema migrations...");
+  console.log("[seed-gateway] Running schema migrations...");
   const migrationResult = await runMigrations(pool);
   console.log(
-    `[seedling-gateway] Migrations: ${migrationResult.applied} applied, ${migrationResult.skipped} skipped`
+    `[seed-gateway] Migrations: ${migrationResult.applied} applied, ${migrationResult.skipped} skipped`
   );
 
   loadPolicies(RBAC_CONFIG_PATH);
 
   ready = true;
   console.log(
-    `[seedling-gateway] Ready — ${Object.keys(TOOL_HANDLERS).length} tools registered`
+    `[seed-gateway] Ready — ${Object.keys(TOOL_HANDLERS).length} tools registered`
   );
 }
 
 server.listen(PORT, () => {
-  console.log(`[seedling-gateway] Listening on :${PORT}`);
+  console.log(`[seed-gateway] Listening on :${PORT}`);
   startup().catch((err) => {
-    console.error("[seedling-gateway] Startup failed:", err.message);
+    console.error("[seed-gateway] Startup failed:", err.message);
     process.exit(1);
   });
 });
 
 process.on("SIGTERM", async () => {
-  console.log("[seedling-gateway] Shutting down...");
+  console.log("[seed-gateway] Shutting down...");
   server.close();
   await pool.end();
   process.exit(0);

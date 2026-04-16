@@ -1,5 +1,5 @@
-# RBAC Policies for Yggdrasil Seedlings
-# Adapted from komatik-agents/config/rbac-policies.yaml for the 6-role collective
+# RBAC Policies for Yggdrasil Seeds
+# Adapted from komatik-agents/config/rbac-policies.yaml for the agent collective
 
 default_policy: deny_unspecified
 
@@ -78,6 +78,21 @@ roles:
       - read_project_file
       - write_output
 
+  synthesizer:
+    description: "Synthesis — cross-scope pattern detection, finding promotion"
+    allowed_tools:
+      - register_identity
+      - get_messages
+      - send_agent_message
+      - complete_step
+      - fail_step
+      - get_workflow
+      - get_agent_queue
+      - read_project_file
+      - write_output
+      - create_task
+      - get_system_health
+
 agents:
   mission:
     role: guardian
@@ -91,3 +106,5 @@ agents:
     role: writer
   community:
     role: moderator
+  synthesis:
+    role: synthesizer

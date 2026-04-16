@@ -16,7 +16,7 @@ import yaml from "js-yaml";
 import path from "node:path";
 
 const CHARS_PER_TOKEN = 4;
-const BRANCH_FINDINGS_PATH = "/workspace/branch/SHARED-FINDINGS.md";
+const CATEGORY_FINDINGS_PATH = "/workspace/category/SHARED-FINDINGS.md";
 
 function estimateTokens(text) {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
@@ -215,25 +215,25 @@ function formatWorkflowSteps(steps) {
   return md;
 }
 
-// ── Branch Context ─────────────────────────────────────────────────────
+// ── Category Context ───────────────────────────────────────────────────
 
 /**
- * Loads shared findings from the branch-level knowledge base.
- * The file is mounted read-only at /workspace/branch/SHARED-FINDINGS.md
- * by the seedling's compose override. Returns empty string if not available.
+ * Loads shared findings from the category-level knowledge base.
+ * The file is mounted read-only at /workspace/category/SHARED-FINDINGS.md
+ * by the seed's compose override. Returns empty string if not available.
  */
-export function loadBranchFindings(findingsPath = BRANCH_FINDINGS_PATH) {
+export function loadCategoryFindings(findingsPath = CATEGORY_FINDINGS_PATH) {
   try {
     if (!fs.existsSync(findingsPath)) return "";
     const content = fs.readFileSync(findingsPath, "utf-8").trim();
     // Skip placeholder files that have no real findings
     if (!content || content.includes("No shared findings yet")) return "";
-    return "## Branch Shared Knowledge\n\n" +
-      "> Cross-seedling findings from the branch knowledge base. " +
+    return "## Category Shared Knowledge\n\n" +
+      "> Cross-seed findings from the category knowledge base. " +
       "Treat as validated context — do not re-research these topics.\n\n" +
       content + "\n\n";
   } catch (err) {
-    console.warn(`[context] Could not load branch findings: ${err.message}`);
+    console.warn(`[context] Could not load category findings: ${err.message}`);
     return "";
   }
 }
@@ -275,17 +275,17 @@ export async function assembleContext(pool, agentId, configPath) {
   ].join("");
 
   const memoryBudget = budget.max_memory_tokens || 2000;
-  const branchBudget = budget.max_branch_findings_tokens || 1500;
+  const categoryBudget = budget.max_category_findings_tokens || 1500;
   const totalBudget = budget.max_context_tokens || 8000;
-  const taskBudget = totalBudget - memoryBudget - branchBudget;
+  const taskBudget = totalBudget - memoryBudget - categoryBudget;
 
   const truncatedMemory = truncateToTokens(memorySection, memoryBudget);
   const truncatedTasks = truncateToTokens(taskSection, Math.max(taskBudget, 1000));
 
-  // Load branch-level shared findings (file-based, no DB query)
-  const branchFindings = loadBranchFindings();
-  const truncatedBranch = branchFindings
-    ? truncateToTokens(branchFindings, branchBudget)
+  // Load category-level shared findings (file-based, no DB query)
+  const categoryFindings = loadCategoryFindings();
+  const truncatedCategory = categoryFindings
+    ? truncateToTokens(categoryFindings, categoryBudget)
     : "";
 
   let context = "# Session Context\n\n";
@@ -295,8 +295,8 @@ export async function assembleContext(pool, agentId, configPath) {
     context += "---\n# Memory\n\n" + truncatedMemory;
   }
 
-  if (truncatedBranch.trim()) {
-    context += "---\n# Branch Knowledge\n\n" + truncatedBranch;
+  if (truncatedCategory.trim()) {
+    context += "---\n# Category Knowledge\n\n" + truncatedCategory;
   }
 
   if (truncatedTasks.trim()) {
@@ -304,10 +304,10 @@ export async function assembleContext(pool, agentId, configPath) {
   }
 
   const tokenCount = estimateTokens(context);
-  const branchTokens = estimateTokens(truncatedBranch);
+  const categoryTokens = estimateTokens(truncatedCategory);
   console.log(
     `[context] Assembled ${tokenCount} tokens for ${agentId} ` +
-      `(budget: ${totalBudget}, memory: ${memoryBudget}, branch: ${branchTokens}) ` +
+      `(budget: ${totalBudget}, memory: ${memoryBudget}, category: ${categoryTokens}) ` +
       `[${learnings.length} learnings, ${runs.length} runs, ${tasks.length} tasks, ` +
       `${messages.length} messages, ${steps.length} steps, ${retractions.length} retractions]`
   );

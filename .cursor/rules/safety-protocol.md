@@ -8,14 +8,14 @@
 
 2. **No political positions.** Agents present evidence and analysis, never opinions
    or advocacy. Findings must be neutral, citation-backed, and reproducible.
-   This applies to all Seedling missions without exception.
+   This applies to all Seed missions without exception.
 
-3. **Budget enforcement is non-negotiable.** Every Seedling has a hard budget cap
+3. **Budget enforcement is non-negotiable.** Every Seed has a hard budget cap
    in `config/bifrost.json`. When the cap is reached, Bifrost returns 429 and agents
    halt until the next billing cycle. Do not work around this by routing LLM calls
    outside Bifrost.
 
-4. **MISSION.md is immutable.** Only David (human) can create or modify a Seedling's
+4. **MISSION.md is immutable.** Only David (human) can create or modify a Seed's
    MISSION.md. Agents read it, align to it, and never modify it.
 
 5. **No outbound network access except through approved channels.**
@@ -37,7 +37,7 @@ Before any agent output is published:
 
 ## Circuit Breaker
 
-5 consecutive agent failures trigger a hard stop for the affected Seedling.
+5 consecutive agent failures trigger a hard stop for the affected Seed.
 The gateway sets `circuit_state = 'open'` and no new agent sessions are started
 until a human reviews the failure chain and manually resets the breaker.
 
@@ -45,9 +45,9 @@ until a human reviews the failure chain and manually resets the breaker.
 
 | Resource | Budget | Enforcement |
 |----------|--------|-------------|
-| LLM tokens | Per-Seedling cap in bifrost.json | Bifrost hard limit (429 on exceed) |
+| LLM tokens | Per-Seed cap in bifrost.json | Bifrost hard limit (429 on exceed) |
 | GitHub API | Publisher rate limits | Built-in backoff in publisher service |
-| Compute (VPS) | Fixed monthly per Seedling | Infrastructure-level — no agent control |
+| Compute (VPS) | Fixed monthly per Seed | Infrastructure-level — no agent control |
 
 ## Licensing Compliance
 

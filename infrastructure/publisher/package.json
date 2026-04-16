@@ -1,9 +1,9 @@
 {
-  "name": "@komatik/seedling-publisher",
+  "name": "@komatik/seed-publisher",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Git output pipeline for Yggdrasil Seedlings — validates artifacts, commits to public repo, generates TOKENS.md",
+  "description": "Git output pipeline for Yggdrasil Seeds — validates artifacts, commits to public repo, generates TOKENS.md",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

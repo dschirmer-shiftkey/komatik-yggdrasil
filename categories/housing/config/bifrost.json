@@ -1,0 +1,39 @@
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "provider": "anthropic",
+      "api_key": "${ANTHROPIC_API_KEY}",
+      "weight": 100,
+      "models": ["claude-sonnet-4-20250514"],
+      "rate_limit": {
+        "rpm": 15,
+        "tpm": 60000
+      }
+    },
+    {
+      "name": "openai",
+      "provider": "openai",
+      "api_key": "${OPENAI_API_KEY}",
+      "weight": 50,
+      "models": ["gpt-4o-mini"],
+      "rate_limit": {
+        "rpm": 30,
+        "tpm": 100000
+      }
+    }
+  ],
+  "virtual_keys": [
+    {
+      "name": "category-housing",
+      "key": "${SEED_VIRTUAL_KEY}",
+      "allowed_models": ["claude-sonnet-4-20250514", "gpt-4o-mini"],
+      "default_model": "gpt-4o-mini",
+      "budget": {
+        "max_cost_monthly": 25,
+        "max_rpm": 15,
+        "max_tpm": 60000
+      }
+    }
+  ]
+}

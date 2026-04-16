@@ -1,7 +1,7 @@
 /**
- * Seedling Agent Runner
+ * Seed Agent Runner
  *
- * Boots a single agent role within a Seedling. Implements the full
+ * Boots a single agent role within a Seed. Implements the full
  * session protocol from AGENTS.md:
  *
  *   Session Start:

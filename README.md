@@ -5,7 +5,7 @@
 
 ## What Is Yggdrasil?
 
-Yggdrasil is a collection of **Seedlings** — self-contained AI agent collectives,
+Yggdrasil is a collection of **Seeds** — self-contained AI agent collectives,
 each assigned to a single global mission. The agents research, reason, model, and
 prototype continuously. Every output is committed to a public repository under
 open-source licenses.
@@ -25,10 +25,10 @@ cd komatik-yggdrasil
 cp .env.example .env
 # Edit .env — fill in POSTGRES_PASSWORD, at least one LLM API key, GITHUB_TOKEN
 
-# Boot a Seedling (Energy)
+# Boot a Seed (Energy)
 docker compose --project-directory . \
   -f infrastructure/compose.yaml \
-  -f seedlings/001-energy/config/compose.override.yaml up
+  -f seeds/001-energy/config/compose.override.yaml up
 ```
 
 ### Running Tests
@@ -40,11 +40,11 @@ cd infrastructure/gateway && npm ci && npm test   # 25 tests — RBAC, tool regi
 
 ## How It Works
 
-Each Seedling is a containerized stack running:
+Each Seed is a containerized stack running:
 
 - **6 specialized agents** — Mission, Research, Analysis, Prototype, Documentation, Community
 - **OpenClaw Gateway** — RBAC-enforced tool surface (17 tools), health checks, migration runner
-- **Bifrost AI Gateway** — LLM proxy with per-Seedling cost metering and budget enforcement
+- **Bifrost AI Gateway** — LLM proxy with per-Seed cost metering and budget enforcement
 - **Scheduler** — cycle loop manager with step retry (2x) and circuit breaker (5 failures)
 - **PostgreSQL** — agent state, decisions, workflow steps, memory, and LLM usage telemetry
 - **Publisher** — validates artifacts, commits approved outputs to this repo, generates TOKENS.md
@@ -90,32 +90,32 @@ or rejection with reason:
 
 Only approved outputs are published. The scheduler parses this JSON to signal the publisher.
 
-All LLM calls are metered. Every token spent is logged in each Seedling's
+All LLM calls are metered. Every token spent is logged in each Seed's
 `TOKENS.md` — a public ledger of compute donated by Komatik.
 
 ## The World Tree
 
 Yggdrasil organizes all of its work into a hierarchy:
-- **Trunks** — broad categories of human need
-- **Branches** — specific problem domains within a trunk
-- **Seedlings** — geographically scoped instances, independently funded
+- **Roots** — broad categories of human need
+- **Categories** — specific problem domains within a root
+- **Seeds** — geographically scoped instances, independently funded
 
-Seedlings on the same branch share knowledge upward. Sponsors fund specific
-seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
+Seeds in the same category share knowledge upward. Sponsors fund specific
+seeds. See [tree.yaml](tree.yaml) for the machine-readable registry.
 
 ### Basic Needs
 
-| Branch | Seedlings | Status |
+| Category | Seeds | Status |
 |--------|-----------|--------|
-| **Energy** — Distributed renewables, open hardware, community microgrids | [001-energy](seedlings/001-energy/) (Sub-Saharan Africa & SE Asia) | Infrastructure Ready |
-| **Housing** — Homelessness reduction, affordable housing research | [002-homelessness-la](seedlings/002-homelessness-la/) (Los Angeles County) | Planned |
+| **Energy** — Distributed renewables, open hardware, community microgrids | [001-energy](seeds/001-energy/) (Sub-Saharan Africa & SE Asia) | Infrastructure Ready |
+| **Housing** — Homelessness reduction, affordable housing research | [002-homelessness-la](seeds/002-homelessness-la/) (Los Angeles County) | Planned |
 | **Hunger** — Food insecurity, food loss, smallholder agriculture | *Open for proposals* | — |
 | **Water** — Purification, collection, sanitation systems | *Open for proposals* | — |
 | **Health** — Physical and behavioral health, mental health, addiction, elder care | *Open for proposals* | — |
 
 ### Human Growth
 
-| Branch | Seedlings | Status |
+| Category | Seeds | Status |
 |--------|-----------|--------|
 | **Education** — Learning tools, literacy, vocational training | *Open for proposals* | — |
 | **Economic Opportunity** — Poverty reduction, microfinance, job creation | *Open for proposals* | — |
@@ -123,7 +123,7 @@ seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 
 ### Planet & Life
 
-| Branch | Seedlings | Status |
+| Category | Seeds | Status |
 |--------|-----------|--------|
 | **Climate** — Carbon sequestration, adaptation, disaster resilience, early warning | *Open for proposals* | — |
 | **Oceans** — Marine conservation, plastic pollution, fisheries | *Open for proposals* | — |
@@ -131,28 +131,28 @@ seedlings. See [tree.yaml](tree.yaml) for the machine-readable registry.
 
 ### Society & Systems
 
-| Branch | Seedlings | Status |
+| Category | Seeds | Status |
 |--------|-----------|--------|
 | **Peace** — Conflict resolution, refugee support, governance | *Open for proposals* | — |
 | **Community** — Civic life, arts, culture, animal welfare, disaster prep, transit, urban planning | *Open for proposals* | — |
 | **Digital Access** — Digital divide, connectivity, open knowledge | *Open for proposals* | — |
 
-### Proposing a New Seedling
+### Proposing a New Seed
 
-Anyone can propose a new seedling by opening a GitHub issue. Each branch defines
-a **scope floor** — the minimum geographic granularity for a seedling. Below that
-level, contributors join an existing seedling rather than creating a new one.
+Anyone can propose a new seed by opening a GitHub issue. Each category defines
+a **scope floor** — the minimum geographic granularity for a seed. Below that
+level, contributors join an existing seed rather than creating a new one.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full proposal process.
 
 ## The Pledge
 
-Komatik pledges **1% of platform compute** to Yggdrasil Seedlings. As the
+Komatik pledges **1% of platform compute** to Yggdrasil Seeds. As the
 platform grows, so does the charitable compute budget. Every token is tracked,
 every output is public, every finding is open-source.
 
 | Phase | Trigger | Action |
 |-------|---------|--------|
-| Phase 1 | Pre-revenue | Flat monthly budget per Seedling |
+| Phase 1 | Pre-revenue | Flat monthly budget per Seed |
 | Phase 2 | First consistent revenue | Open Donor-Advised Fund (DAF) |
 | Phase 3 | Sufficient scale | Graduate to 501(c)(3) foundation |
 
@@ -161,7 +161,7 @@ every output is public, every finding is open-source.
 ```
 komatik-yggdrasil/
 ├── infrastructure/           # Container specs and shared configs
-│   ├── compose.yaml          # Template Docker Compose for a Seedling
+│   ├── compose.yaml          # Template Docker Compose for a Seed
 │   ├── .env.example          # Environment template (copy to root .env)
 │   ├── gateway/              # OpenClaw Gateway — RBAC, 17 tools, migrations
 │   │   ├── Dockerfile        # Node 22 Alpine image
@@ -192,21 +192,21 @@ komatik-yggdrasil/
 │       ├── rbac-policies.yaml    # Role → tool authorization matrix
 │       ├── agent-capacity.yaml   # Max concurrent steps per role
 │       └── context-budget.yaml   # Token budget per context section
-├── branches/                 # Shared knowledge per problem domain
-│   ├── energy/               # Cross-seedling findings for energy
-│   └── housing/              # Cross-seedling findings for housing
-├── tree.yaml                 # Branch & Seedling registry (website consumes this)
-├── seedlings/
+├── categories/               # Shared knowledge per problem domain
+│   ├── energy/               # Cross-seed findings for energy
+│   └── housing/              # Cross-seed findings for housing
+├── tree.yaml                 # Category & Seed registry (website consumes this)
+├── seeds/
 │   ├── 001-energy/           # Energy — Sub-Saharan Africa & SE Asia
 │   └── 002-homelessness-la/  # Homelessness — Los Angeles County
 │       ├── MISSION.md        # Immutable mission statement
-│       ├── AGENTS.md         # Seedling-specific agent protocol
+│       ├── AGENTS.md         # Seed-specific agent protocol
 │       ├── TOKENS.md         # Public compute ledger (auto-updated)
 │       ├── FINDINGS.md       # Accumulated research findings
 │       ├── RESEARCH/         # Raw research artifacts
 │       ├── MODELS/           # Data models and simulations
 │       ├── PROTOTYPES/       # Code and design proof-of-concepts
-│       └── config/           # Overrides for this Seedling
+│       └── config/           # Overrides for this Seed
 │           ├── agents/*.yaml # 6 agent configs (system prompts, models, limits)
 │           ├── bifrost.json  # LLM provider config ($50/month budget)
 │           └── compose.override.yaml  # Mounts configs into base containers
@@ -216,7 +216,7 @@ komatik-yggdrasil/
 ├── .github/workflows/        # CI pipeline
 │   └── validate.yml          # Structure validation, Docker builds, tests
 ├── .env.example              # Root-level env template (copy to .env)
-├── AGENTS.md                 # Seedling agent collective protocol
+├── AGENTS.md                 # Seed agent collective protocol
 ├── CONTRIBUTING.md           # How to participate
 ├── LICENSE                   # MIT (code)
 └── LICENSE-CC-BY-4.0         # CC BY 4.0 (research/findings)

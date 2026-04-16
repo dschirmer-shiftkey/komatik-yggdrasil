@@ -434,14 +434,13 @@ budget resets and hibernating seeds wake up automatically.
 
 ## 7. Naming Convention
 
-| Codebase term (current) | Correct term | Notes |
-|------------------------|--------------|-------|
-| trunk | Root | 4 broad pillars |
-| branch | Root Category | 14 problem domains |
-| seedling | Seed | Geographic research instances |
+| Term | Code/Config Key | Count | Notes |
+|------|----------------|-------|-------|
+| Root | `root`, `root_id` | 4 | Broad pillars |
+| Root Category | `category`, `category_id` | 14 | Problem domains |
+| Seed | `seed`, `seed_id` | N | Geographic research instances |
 
-Rename planned but not yet executed. All new code and docs should use
-the correct terms (Root, Root Category, Seed).
+Rename completed. Codebase uses root/category/seed consistently.
 
 ---
 
@@ -458,10 +457,11 @@ This serves as the template for all other roots, categories, and seeds.
 
 ## 9. Open Items
 
-- [ ] Supabase schema rename: `branch_id` -> `category_id`, `trunk_id` -> `root_id`
+- [x] Codebase rename: trunk/branch/seedling → root/category/seed
+- [x] Supabase schema rename: `branch_id` → `category_id`, `trunk_id` → `root_id`
+- [x] Root HQ container spec (basic-needs)
+- [x] Category container spec (housing)
 - [ ] Cloud provider selection (Fargate Spot vs Hetzner vs hybrid)
-- [ ] Root HQ container spec (which agents, what soul files)
-- [ ] Category container spec (which agents, what soul files)
 - [ ] Public suggestion queue mechanism
 - [ ] Sponsor dashboard / portal
 - [ ] Budget reset mechanism (monthly anniversary vs calendar month)
