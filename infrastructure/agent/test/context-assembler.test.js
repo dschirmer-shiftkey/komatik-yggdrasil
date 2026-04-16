@@ -1,6 +1,13 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
-import { loadContextBudget, getBudgetForRole } from "../lib/context-assembler.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {
+  loadContextBudget,
+  getBudgetForRole,
+  loadBranchFindings,
+} from "../lib/context-assembler.js";
 
 describe("loadContextBudget", () => {
   it("returns defaults when file does not exist", () => {
@@ -34,5 +41,47 @@ describe("getBudgetForRole", () => {
   it("inherits defaults not overridden", () => {
     const budget = getBudgetForRole(config, "mission");
     assert.ok(budget.max_context_tokens);
+  });
+});
+
+describe("loadBranchFindings", () => {
+  it("returns empty string when file does not exist", () => {
+    const result = loadBranchFindings("/nonexistent/SHARED-FINDINGS.md");
+    assert.equal(result, "");
+  });
+
+  it("returns empty string for placeholder content", () => {
+    const tmpFile = path.join(os.tmpdir(), "test-shared-findings-placeholder.md");
+    fs.writeFileSync(tmpFile, "# Shared Findings\n\n*No shared findings yet*\n");
+    try {
+      const result = loadBranchFindings(tmpFile);
+      assert.equal(result, "");
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it("returns formatted content for real findings", () => {
+    const tmpFile = path.join(os.tmpdir(), "test-shared-findings-real.md");
+    fs.writeFileSync(tmpFile, "# Shared Findings\n\nHousing First reduces chronic homelessness by 80%.\n");
+    try {
+      const result = loadBranchFindings(tmpFile);
+      assert.ok(result.includes("Branch Shared Knowledge"));
+      assert.ok(result.includes("Housing First reduces"));
+      assert.ok(result.includes("do not re-research"));
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it("returns empty string for empty file", () => {
+    const tmpFile = path.join(os.tmpdir(), "test-shared-findings-empty.md");
+    fs.writeFileSync(tmpFile, "");
+    try {
+      const result = loadBranchFindings(tmpFile);
+      assert.equal(result, "");
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
   });
 });
