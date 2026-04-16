@@ -487,7 +487,8 @@ This serves as the template for all other roots, categories, and seeds.
 - [x] Root HQ container spec (basic-needs)
 - [x] Category container spec (housing)
 - [x] Public suggestion queue mechanism (designed: §13 Public Signal Pipeline)
-- [ ] Apex tier (Yggdrasil HQ) container spec and implementation
+- [x] Apex tier (Yggdrasil HQ) container spec (see `apex/`)
+- [ ] Apex tier implementation (event-processor PROCESSOR_TYPE=apex, migrations, boot)
 - [ ] Collaboration Protocol event types and state schema
 - [ ] Contention Map data model and publishing cadence
 - [ ] Public Signal intake surface (GitHub issue template for v1)

@@ -21,6 +21,23 @@
 #     Broader scope, contains existing → Merge discussion
 #     Same scope, non-overlapping  → Allow (new seed)
 
+# ─────────────────────────────────────────────────────────────────────
+# APEX — Yggdrasil HQ
+# The single container above the four Roots. Cross-root synthesis,
+# mission guardian against docs/charter.md, Contention Map aggregation,
+# Public Signal routing. See apex/apex.yaml for the spec.
+# ─────────────────────────────────────────────────────────────────────
+apex:
+  id: "apex"
+  name: "Yggdrasil HQ"
+  description: "Cross-root synthesis, Mission Guardian (charter drift), Contention Map aggregation, Public Signal routing."
+  charter: "docs/charter.md"
+  watches_roots:
+    - basic-needs
+    - human-growth
+    - planet-and-life
+    - society-and-systems
+
 roots:
 
   # ─────────────────────────────────────────────────────────────────────

@@ -1,0 +1,97 @@
+# Apex: Yggdrasil HQ — Compose Override
+#
+# Lightweight 2-agent stack: synthesis + mission (Mission Guardian)
+# Cycles daily, reads the charter and all root-level findings, writes
+# cross-root patterns, drift flags, and the Contention Map.
+#
+# Boot with:
+#   docker compose --project-directory . \
+#     -f infrastructure/compose.yaml \
+#     -f apex/config/compose.override.yaml up
+#
+# NOTE: Requires event-processor to support PROCESSOR_TYPE=apex (not yet
+# implemented — see apex/README.md "Dependencies Not Yet in Place").
+
+services:
+  agent-mission:
+    volumes:
+      - ../MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../docs/charter.md:/workspace/mission/CHARTER.md:ro
+      - ../../infrastructure/agent/souls/mission.md:/workspace/souls/mission.md:ro
+      - ./agents/mission.yaml:/workspace/config/agent.yaml:ro
+    environment:
+      - SEED_NAME=Yggdrasil HQ
+      - CHARTER_PATH=/workspace/mission/CHARTER.md
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.25"
+
+  agent-synthesis:
+    volumes:
+      - ../MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../docs/charter.md:/workspace/mission/CHARTER.md:ro
+      - ../../infrastructure/agent/souls/synthesis.md:/workspace/souls/synthesis.md:ro
+      - ./agents/synthesis.yaml:/workspace/config/agent.yaml:ro
+    environment:
+      - AGENT_ROLE=synthesis
+      - AGENT_ID=synthesis
+      - SEED_NAME=Yggdrasil HQ
+      - CHARTER_PATH=/workspace/mission/CHARTER.md
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.25"
+
+  # Disable seed-only agents for apex
+  agent-research:
+    deploy:
+      replicas: 0
+  agent-analysis:
+    deploy:
+      replicas: 0
+  agent-prototype:
+    deploy:
+      replicas: 0
+  agent-documentation:
+    deploy:
+      replicas: 0
+  agent-community:
+    deploy:
+      replicas: 0
+
+  # No publisher for apex — writes to Supabase only, not GitHub
+  publisher:
+    deploy:
+      replicas: 0
+
+  # Knowledge event processor — apex tier
+  # Reads: finding_promoted events from all root tiers
+  #        signal_digested events from public signal aggregation
+  #        potential_conflict events (root-level) for mediation
+  # Writes: cross_root_pattern_detected, mission_drift_flagged,
+  #         collaboration_required (root-vs-root), signal_routed
+  event-processor:
+    build:
+      context: ../../infrastructure/event-processor
+      dockerfile: Dockerfile
+    container_name: apex-event-processor
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PROCESSOR_TYPE=apex
+      - PROCESSOR_ID=apex
+      - POLL_INTERVAL_SECONDS=600
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  scheduler:
+    environment:
+      - CYCLE_STEPS=synthesis,mission
+      - CYCLE_INTERVAL_MINUTES=${APEX_CYCLE_INTERVAL_MINUTES:-1440}
