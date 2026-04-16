@@ -13,7 +13,10 @@
 import fs from "node:fs";
 import yaml from "js-yaml";
 
+import path from "node:path";
+
 const CHARS_PER_TOKEN = 4;
+const BRANCH_FINDINGS_PATH = "/workspace/branch/SHARED-FINDINGS.md";
 
 function estimateTokens(text) {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
@@ -212,6 +215,29 @@ function formatWorkflowSteps(steps) {
   return md;
 }
 
+// ── Branch Context ─────────────────────────────────────────────────────
+
+/**
+ * Loads shared findings from the branch-level knowledge base.
+ * The file is mounted read-only at /workspace/branch/SHARED-FINDINGS.md
+ * by the seedling's compose override. Returns empty string if not available.
+ */
+export function loadBranchFindings(findingsPath = BRANCH_FINDINGS_PATH) {
+  try {
+    if (!fs.existsSync(findingsPath)) return "";
+    const content = fs.readFileSync(findingsPath, "utf-8").trim();
+    // Skip placeholder files that have no real findings
+    if (!content || content.includes("No shared findings yet")) return "";
+    return "## Branch Shared Knowledge\n\n" +
+      "> Cross-seedling findings from the branch knowledge base. " +
+      "Treat as validated context — do not re-research these topics.\n\n" +
+      content + "\n\n";
+  } catch (err) {
+    console.warn(`[context] Could not load branch findings: ${err.message}`);
+    return "";
+  }
+}
+
 // ── Main Assembly ───────────────────────────────────────────────────────
 
 /**
@@ -249,11 +275,18 @@ export async function assembleContext(pool, agentId, configPath) {
   ].join("");
 
   const memoryBudget = budget.max_memory_tokens || 2000;
+  const branchBudget = budget.max_branch_findings_tokens || 1500;
   const totalBudget = budget.max_context_tokens || 8000;
-  const taskBudget = totalBudget - memoryBudget;
+  const taskBudget = totalBudget - memoryBudget - branchBudget;
 
   const truncatedMemory = truncateToTokens(memorySection, memoryBudget);
-  const truncatedTasks = truncateToTokens(taskSection, taskBudget);
+  const truncatedTasks = truncateToTokens(taskSection, Math.max(taskBudget, 1000));
+
+  // Load branch-level shared findings (file-based, no DB query)
+  const branchFindings = loadBranchFindings();
+  const truncatedBranch = branchFindings
+    ? truncateToTokens(branchFindings, branchBudget)
+    : "";
 
   let context = "# Session Context\n\n";
   context += `> Agent: ${agentId} | Budget: ${totalBudget} tokens | Memory: ${memoryBudget} tokens\n\n`;
@@ -262,14 +295,19 @@ export async function assembleContext(pool, agentId, configPath) {
     context += "---\n# Memory\n\n" + truncatedMemory;
   }
 
+  if (truncatedBranch.trim()) {
+    context += "---\n# Branch Knowledge\n\n" + truncatedBranch;
+  }
+
   if (truncatedTasks.trim()) {
     context += "---\n# Current Work\n\n" + truncatedTasks;
   }
 
   const tokenCount = estimateTokens(context);
+  const branchTokens = estimateTokens(truncatedBranch);
   console.log(
     `[context] Assembled ${tokenCount} tokens for ${agentId} ` +
-      `(budget: ${totalBudget}, memory: ${memoryBudget}) ` +
+      `(budget: ${totalBudget}, memory: ${memoryBudget}, branch: ${branchTokens}) ` +
       `[${learnings.length} learnings, ${runs.length} runs, ${tasks.length} tasks, ` +
       `${messages.length} messages, ${steps.length} steps, ${retractions.length} retractions]`
   );
