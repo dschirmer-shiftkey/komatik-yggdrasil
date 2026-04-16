@@ -57,6 +57,26 @@ services:
     deploy:
       replicas: 0
 
+  # Knowledge event processor — receives promoted findings from categories
+  event-processor:
+    build:
+      context: ../../infrastructure/event-processor
+      dockerfile: Dockerfile
+    container_name: basic-needs-event-processor
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PROCESSOR_TYPE=root
+      - PROCESSOR_ID=basic-needs
+      - ROOT_ID=basic-needs
+      - POLL_INTERVAL_SECONDS=300
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
   scheduler:
     environment:
       - CYCLE_STEPS=synthesis,mission

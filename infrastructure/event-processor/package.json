@@ -1,0 +1,17 @@
+{
+  "name": "@komatik/event-processor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Knowledge event processor for Yggdrasil — validates and promotes findings through the tree hierarchy",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@komatik/shared": "file:../shared"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

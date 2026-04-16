@@ -57,6 +57,27 @@ services:
     deploy:
       replicas: 0
 
+  # Knowledge event processor — validates seed findings, promotes to root
+  event-processor:
+    build:
+      context: ../../infrastructure/event-processor
+      dockerfile: Dockerfile
+    container_name: housing-event-processor
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - PROCESSOR_TYPE=category
+      - PROCESSOR_ID=housing
+      - CATEGORY_ID=housing
+      - ROOT_ID=basic-needs
+      - POLL_INTERVAL_SECONDS=120
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
   scheduler:
     environment:
       - CYCLE_STEPS=synthesis,mission

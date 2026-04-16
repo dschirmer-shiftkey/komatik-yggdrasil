@@ -23,6 +23,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { Pool } from "pg";
+import { getSupabase, publishFinding, postKnowledgeEvent } from "@komatik/shared/supabase";
 
 const OUTPUT_DIR = "/workspace/output";
 const STAGING_DIR = "/tmp/publisher-staging";
@@ -35,6 +36,12 @@ const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 // Token usage is sourced from the DB (llm_usage table), not Bifrost metrics.
 // Bifrost metrics scraping was removed because the publisher and Bifrost are
 // on isolated Docker networks — the DB is the single source of truth.
+
+// World tree identity — where this container sits in the hierarchy
+const SOURCE_TYPE = process.env.SOURCE_TYPE || "seed";
+const SOURCE_ID = process.env.SOURCE_ID || "unknown";
+const CATEGORY_ID = process.env.CATEGORY_ID || "unknown";
+const ROOT_ID = process.env.ROOT_ID || "unknown";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -202,6 +209,103 @@ function generateTokensMd(usage) {
   return md;
 }
 
+// ── World Tree Publishing ──────────────────────────────────────────────
+
+/**
+ * Extract finding metadata from a FINDINGS.md artifact.
+ * Expects YAML frontmatter or structured markdown with title/summary.
+ * Falls back to filename-derived title if no structure found.
+ */
+function extractFindingFromArtifact(filePath) {
+  const content = fs.readFileSync(filePath, "utf-8");
+  const basename = path.basename(filePath, path.extname(filePath));
+
+  // Try to extract structured finding (## Title\n\nSummary paragraph)
+  const titleMatch = content.match(/^#\s+(.+)$/m) || content.match(/^##\s+(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : basename.replace(/[-_]/g, " ");
+
+  // First non-heading paragraph as summary
+  const paragraphs = content
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p && !p.startsWith("#") && !p.startsWith(">") && !p.startsWith("---"));
+  const summary = paragraphs[0] || title;
+
+  // Look for methodology section
+  const methMatch = content.match(/##\s*Methodology\s*\n+([\s\S]*?)(?=\n##|\n---|\Z)/i);
+  const methodology = methMatch ? methMatch[1].trim() : null;
+
+  return { title, summary, content, methodology };
+}
+
+/**
+ * Publish validated artifacts to the Supabase world tree.
+ * Each FINDINGS-related artifact becomes a finding + knowledge event.
+ */
+async function publishToWorldTree(artifacts, approval) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    console.log("[publisher] Supabase not configured — skipping world tree publish");
+    return;
+  }
+
+  // Filter to finding-type artifacts (markdown files in RESEARCH/ or root output)
+  const findingArtifacts = artifacts.filter((f) => {
+    const ext = path.extname(f).toLowerCase();
+    return ext === ".md" && !path.basename(f).startsWith("TOKENS");
+  });
+
+  if (findingArtifacts.length === 0) {
+    console.log("[publisher] No finding artifacts to publish to world tree");
+    return;
+  }
+
+  console.log(`[publisher] Publishing ${findingArtifacts.length} findings to world tree`);
+
+  for (const artifact of findingArtifacts) {
+    try {
+      const { title, summary, content, methodology } = extractFindingFromArtifact(artifact);
+
+      // Write finding to Supabase
+      const finding = await publishFinding(supabase, {
+        sourceType: SOURCE_TYPE,
+        sourceId: SOURCE_ID,
+        categoryId: CATEGORY_ID,
+        rootId: ROOT_ID,
+        title,
+        summary,
+        content,
+        methodology,
+        confidence: "preliminary",
+        tags: [],
+        sdgs: [],
+        geographicScope: [],
+        workflowId: approval?.workflow_id || null,
+        cycleNumber: approval?.cycle_number || null,
+        agentRole: approval?.agent_role || null,
+      });
+
+      // Post knowledge event — notify category that a finding is ready
+      await postKnowledgeEvent(supabase, {
+        eventType: "finding_ready",
+        sourceType: SOURCE_TYPE,
+        sourceId: SOURCE_ID,
+        categoryId: CATEGORY_ID,
+        targetType: "category",
+        targetId: CATEGORY_ID,
+        payload: {
+          finding_id: finding.id,
+          title,
+          summary,
+        },
+      });
+    } catch (err) {
+      console.error(`[publisher] Failed to publish ${path.basename(artifact)} to world tree:`, err.message);
+      // Non-fatal — GitHub publish already succeeded
+    }
+  }
+}
+
 // ── Publish cycle ───────────────────────────────────────────────────────
 
 async function publishCycle() {
@@ -247,6 +351,9 @@ async function publishCycle() {
   }
 
   await publishToGithub(validated);
+
+  // Feed findings up the world tree (non-fatal if Supabase unavailable)
+  await publishToWorldTree(validated, approval);
 }
 
 // ── Main ────────────────────────────────────────────────────────────────
