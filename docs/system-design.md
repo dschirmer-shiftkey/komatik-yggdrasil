@@ -175,7 +175,7 @@ knows. It starts smart, not from scratch.
         event_type: "finding_ready",
         source_type: "seed",
         source_id: "002-homelessness-la",
-        branch_id: "housing",      # category
+        category_id: "housing",
         payload: { finding data }
       }
 
@@ -188,7 +188,7 @@ knows. It starts smart, not from scratch.
       findings {
         source_type: "seed",
         source_id: "002-homelessness-la",
-        branch_id: "housing",
+        category_id: "housing",
         confidence: "validated",
         ...
       }
