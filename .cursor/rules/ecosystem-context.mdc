@@ -40,14 +40,18 @@ Yggdrasil Seedlings are built on the same technology as Base Camp, stripped down
 
 ## Current Architecture State
 
-The Seedling infrastructure is **functional and tested**:
+All infrastructure work is **merged to `main`** (PRs #1–#4, merged 2026-04-15/16):
 
 - **Agent runner**: Full loop — context assembly, atomic step claiming (`FOR UPDATE SKIP LOCKED`), Bifrost LLM calls, decision logging, artifact writing, circuit breaker. Agent YAML configs (system_prompt, preferred_model, max_tokens) are wired into LLM calls.
-- **Gateway**: HTTP server with 17 RBAC-enforced tools, migration runner, health checks. Note: agents currently bypass the gateway for DB access (see ADR-001).
-- **Scheduler**: Cycle loop with dedup, step dependency resolution, retry (2x per step), circuit breaker (5 total failures), structured mission approval parsing.
-- **Publisher**: Artifact validation, git pipeline (clone → copy → commit → push), TOKENS.md generation from DB.
-- **Bifrost**: Custom Dockerfile with runtime env var substitution for API keys.
-- **Tests**: 30 unit tests (RBAC, tool registry, context assembler, decisions module).
+- **Context assembler + decisions lib**: Token-budgeted context assembly, decision audit trail with retraction support, per-role budget overrides.
+- **Gateway**: HTTP server with 17 RBAC-enforced tools, migration runner (checksummed), health checks. Note: agents currently bypass the gateway for DB access (see ADR-001).
+- **Scheduler**: Cycle loop with dedup, step dependency resolution, retry (2x per step), circuit breaker (5 total failures), structured mission approval parsing (JSON + heuristic fallback).
+- **Publisher**: Artifact validation (secret detection via regex), git pipeline (clone → copy → commit → push), TOKENS.md generation from DB `llm_usage` table.
+- **Bifrost**: Custom Dockerfile with runtime env var substitution for API keys. $50/month budget cap per Seedling.
+- **Soul files**: All 6 role definitions (mission, research, analysis, prototype, documentation, community) with identity, responsibilities, output format, operating style.
+- **Agent configs**: All 6 Energy seedling YAML configs with domain-tuned system prompts, preferred models, token limits, and task profiles.
+- **Schema**: 10 tables (sessions, workflows, steps, runs, decisions, messages, tasks, llm_usage) + 2 migrations.
+- **Tests**: 30 unit tests (RBAC policies, tool registry, context budget loading, decisions module exports). Coverage is smoke-level — no functional/integration tests yet.
 - **CI**: GitHub Actions — structure validation, Docker builds, syntax checks (recursive), test suites.
 
 ## Hub Coordination
@@ -73,6 +77,8 @@ The komatik-agents hub tracks Yggdrasil via these files:
 
 ## Current Blockers
 
+- Stack has never been `docker compose up`'d end-to-end — first live run is the next milestone
 - VPS deployment waits on hosting setup (DNS + Docker host)
 - DNS for yggdrasil.komatik.xyz not yet configured
 - First live run needs real API keys configured in .env
+- Test coverage is minimal (smoke tests only) — no functional or integration tests

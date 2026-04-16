@@ -141,7 +141,7 @@ docker compose --project-directory . -f infrastructure/compose.yaml config --qui
 
 ## Git Workflow
 
-- **Branch**: `feat/agent-memory-loop` is the current development branch
+- **Branch**: `main` — all infrastructure work merged (PRs #1–#4); new work branches off `main`
 - **PRs**: Required for all changes — infrastructure and Seedling content alike
 - **Agent outputs**: Committed by the Publisher service during live operation
 - **Human changes**: Standard PR workflow — branch, commit, push, review, merge
