@@ -1,0 +1,63 @@
+# Category: Housing — Compose Override
+#
+# Lightweight 2-agent stack: synthesis + mission
+# Boot with:
+#   docker compose --project-directory . \
+#     -f infrastructure/compose.yaml \
+#     -f categories/housing/config/compose.override.yaml up
+
+services:
+  agent-mission:
+    volumes:
+      - ../MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/mission.md:/workspace/souls/mission.md:ro
+      - ./agents/mission.yaml:/workspace/config/agent.yaml:ro
+    environment:
+      - SEED_NAME=Housing Category
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+  agent-synthesis:
+    volumes:
+      - ../MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../../infrastructure/agent/souls/synthesis.md:/workspace/souls/synthesis.md:ro
+      - ./agents/synthesis.yaml:/workspace/config/agent.yaml:ro
+    environment:
+      - AGENT_ROLE=synthesis
+      - AGENT_ID=synthesis
+      - SEED_NAME=Housing Category
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
+
+  # Disable seed-only agents for category
+  agent-research:
+    deploy:
+      replicas: 0
+  agent-analysis:
+    deploy:
+      replicas: 0
+  agent-prototype:
+    deploy:
+      replicas: 0
+  agent-documentation:
+    deploy:
+      replicas: 0
+  agent-community:
+    deploy:
+      replicas: 0
+
+  # No publisher for category — writes to Supabase, not GitHub
+  publisher:
+    deploy:
+      replicas: 0
+
+  scheduler:
+    environment:
+      - CYCLE_STEPS=synthesis,mission
+      - CYCLE_INTERVAL_MINUTES=${CATEGORY_CYCLE_INTERVAL_MINUTES:-240}

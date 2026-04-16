@@ -1,0 +1,28 @@
+{
+  "providers": [
+    {
+      "name": "anthropic",
+      "provider": "anthropic",
+      "api_key": "${ANTHROPIC_API_KEY}",
+      "weight": 100,
+      "models": ["claude-sonnet-4-20250514"],
+      "rate_limit": {
+        "rpm": 10,
+        "tpm": 50000
+      }
+    }
+  ],
+  "virtual_keys": [
+    {
+      "name": "root-basic-needs",
+      "key": "${SEED_VIRTUAL_KEY}",
+      "allowed_models": ["claude-sonnet-4-20250514"],
+      "default_model": "claude-sonnet-4-20250514",
+      "budget": {
+        "max_cost_monthly": 30,
+        "max_rpm": 10,
+        "max_tpm": 50000
+      }
+    }
+  ]
+}

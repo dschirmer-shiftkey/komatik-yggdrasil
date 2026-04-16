@@ -1,4 +1,4 @@
-name: Validate Seedling Structure
+name: Validate Seed Structure
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate:
-    name: Validate Seedling Artifacts
+    name: Validate Seed Artifacts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,10 +28,10 @@ jobs:
           fi
           echo "All required root files present"
 
-      - name: Validate Seedling directories
+      - name: Validate Seed directories
         run: |
           ERRORS=0
-          for dir in seedlings/*/; do
+          for dir in seeds/*/; do
             name=$(basename "$dir")
             echo "::group::Validating $name"
 
@@ -67,17 +67,17 @@ jobs:
             echo "::error::$ERRORS validation errors found"
             exit 1
           fi
-          echo "All Seedlings validated"
+          echo "All Seeds validated"
 
       - name: Validate tree.yaml registry
         run: |
           if [[ -f "tree.yaml" ]]; then
-            echo "Checking tree.yaml seedling references..."
+            echo "Checking tree.yaml seed references..."
             WARNINGS=0
-            # Extract seedling IDs from tree.yaml (lines matching - "NNN-name")
+            # Extract seed IDs from tree.yaml (lines matching - "NNN-name")
             grep -oP '"\K[0-9]{3}-[a-z0-9-]+(?=")' tree.yaml | while read -r sid; do
-              if [[ ! -d "seedlings/$sid" ]]; then
-                echo "::warning::tree.yaml references seedling '$sid' but seedlings/$sid/ does not exist"
+              if [[ ! -d "seeds/$sid" ]]; then
+                echo "::warning::tree.yaml references seed '$sid' but seeds/$sid/ does not exist"
                 WARNINGS=$((WARNINGS + 1))
               fi
             done
@@ -88,13 +88,13 @@ jobs:
 
       - name: Validate TOKENS.md format
         run: |
-          for tokens_file in seedlings/*/TOKENS.md; do
+          for tokens_file in seeds/*/TOKENS.md; do
             [[ ! -f "$tokens_file" ]] && continue
-            seedling=$(basename "$(dirname "$tokens_file")")
-            echo "Checking $seedling/TOKENS.md..."
+            seed=$(basename "$(dirname "$tokens_file")")
+            echo "Checking $seed/TOKENS.md..."
 
             if ! head -1 "$tokens_file" | grep -q "^# "; then
-              echo "::warning::$seedling/TOKENS.md missing markdown header"
+              echo "::warning::$seed/TOKENS.md missing markdown header"
             fi
           done
           echo "TOKENS.md format check complete"

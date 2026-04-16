@@ -1,0 +1,27 @@
+id: "basic-needs"
+name: "Basic Needs"
+type: "root"
+status: "planned"
+
+mission_summary: >
+  Govern and synthesize knowledge across the five categories that address
+  survival-level human needs: energy, housing, hunger, water, and health.
+  Ensure cross-category insights flow between categories and that seeds
+  are not duplicating work across domains.
+
+categories:
+  - energy
+  - housing
+  - hunger
+  - water
+  - health
+
+sponsor:
+  status: "komatik-funded"
+  name: "Komatik"
+
+budget:
+  monthly_compute_usd: 30
+  source: "Komatik Infrastructure"
+
+created: "2026-04-15"

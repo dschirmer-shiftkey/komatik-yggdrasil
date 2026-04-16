@@ -2,26 +2,26 @@
 #
 # Single source of truth for the tree hierarchy.
 # komatik.ai website consumes this at build time via GitHub raw content.
-# CI validates that every seedling listed here has a matching directory.
+# CI validates that every seed listed here has a matching directory.
 #
 # THE WORLD TREE
 #   Yggdrasil  = The world tree (this initiative)
-#   Trunks     = Broad categories (Basic Needs, Human Growth, Planet & Life, Society & Systems)
-#   Branches   = Problem domains (Energy, Housing, Health, etc.)
-#   Seedlings  = Geographically scoped instances on a branch
+#   Roots      = Broad categories (Basic Needs, Human Growth, Planet & Life, Society & Systems)
+#   Categories = Problem domains (Energy, Housing, Health, etc.)
+#   Seeds      = Geographically scoped instances on a category
 #
 # ROOT TRIMMING — Granularity Governance
-#   Each branch defines a `scope_floor` — the minimum geographic scope for
-#   a seedling. Below this level, contributors join an existing seedling
+#   Each category defines a `scope_floor` — the minimum geographic scope for
+#   a seed. Below this level, contributors join an existing seed
 #   rather than creating a new one. See CONTRIBUTING.md for the full policy.
 #
 #   Overlap rules:
-#     Narrower than floor          → Redirect to existing seedling
-#     Same scope, same geography   → Contribute to existing seedling
+#     Narrower than floor          → Redirect to existing seed
+#     Same scope, same geography   → Contribute to existing seed
 #     Broader scope, contains existing → Merge discussion
-#     Same scope, non-overlapping  → Allow (new seedling)
+#     Same scope, non-overlapping  → Allow (new seed)
 
-trunks:
+roots:
 
   # ─────────────────────────────────────────────────────────────────────
   # BASIC NEEDS — Survival-level problems: what every human requires
@@ -29,7 +29,7 @@ trunks:
   basic-needs:
     name: "Basic Needs"
     description: "Survival-level problems — energy, shelter, food, water, health."
-    branches:
+    categories:
 
       energy:
         name: "Energy"
@@ -38,7 +38,7 @@ trunks:
         sdgs: [7]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings:
+        seeds:
           - "001-energy"
 
       housing:
@@ -48,7 +48,7 @@ trunks:
         sdgs: [1, 11]
         scope_floor: "metro"
         scope_levels: ["global", "continental", "national", "state", "metro"]
-        seedlings:
+        seeds:
           - "002-homelessness-la"
 
       hunger:
@@ -58,7 +58,7 @@ trunks:
         sdgs: [2]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       water:
         name: "Water"
@@ -67,7 +67,7 @@ trunks:
         sdgs: [6]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       health:
         name: "Health"
@@ -76,7 +76,7 @@ trunks:
         sdgs: [3]
         scope_floor: "national"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
   # ─────────────────────────────────────────────────────────────────────
   # HUMAN GROWTH — Development, opportunity, and dignity
@@ -84,7 +84,7 @@ trunks:
   human-growth:
     name: "Human Growth"
     description: "Education, economic opportunity, and equality — the foundations of human development."
-    branches:
+    categories:
 
       education:
         name: "Education"
@@ -93,7 +93,7 @@ trunks:
         sdgs: [4]
         scope_floor: "national"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       economic-opportunity:
         name: "Economic Opportunity"
@@ -102,7 +102,7 @@ trunks:
         sdgs: [1, 8]
         scope_floor: "national"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       equality:
         name: "Equality"
@@ -111,7 +111,7 @@ trunks:
         sdgs: [5, 10]
         scope_floor: "national"
         scope_levels: ["global", "continental", "national"]
-        seedlings: []
+        seeds: []
 
   # ─────────────────────────────────────────────────────────────────────
   # PLANET & LIFE — Environmental stewardship
@@ -119,7 +119,7 @@ trunks:
   planet-and-life:
     name: "Planet & Life"
     description: "Climate action, ocean health, and ecosystem preservation."
-    branches:
+    categories:
 
       climate:
         name: "Climate"
@@ -128,7 +128,7 @@ trunks:
         sdgs: [13]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       oceans:
         name: "Oceans"
@@ -137,7 +137,7 @@ trunks:
         sdgs: [14]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region"]
-        seedlings: []
+        seeds: []
 
       ecosystems:
         name: "Ecosystems"
@@ -146,7 +146,7 @@ trunks:
         sdgs: [15]
         scope_floor: "region"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
   # ─────────────────────────────────────────────────────────────────────
   # SOCIETY & SYSTEMS — Structural and institutional challenges
@@ -154,7 +154,7 @@ trunks:
   society-and-systems:
     name: "Society & Systems"
     description: "Peace, governance, community connection, and digital access."
-    branches:
+    categories:
 
       peace:
         name: "Peace"
@@ -163,7 +163,7 @@ trunks:
         sdgs: [16]
         scope_floor: "national"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []
 
       community:
         name: "Community"
@@ -172,7 +172,7 @@ trunks:
         sdgs: [11]
         scope_floor: "metro"
         scope_levels: ["global", "continental", "national", "state", "metro"]
-        seedlings: []
+        seeds: []
 
       digital-access:
         name: "Digital Access"
@@ -181,4 +181,4 @@ trunks:
         sdgs: [9]
         scope_floor: "national"
         scope_levels: ["global", "continental", "region", "national"]
-        seedlings: []
+        seeds: []

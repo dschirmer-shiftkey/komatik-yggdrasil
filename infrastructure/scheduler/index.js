@@ -1,5 +1,5 @@
 /**
- * Seedling Scheduler — portable cycle loop manager
+ * Seed Scheduler — portable cycle loop manager
  *
  * Replaces OS-level cron with a container-native scheduling service.
  * Triggers research cycles and monitors them through completion.

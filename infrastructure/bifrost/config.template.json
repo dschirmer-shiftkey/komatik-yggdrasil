@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
-  "_comment": "Bifrost AI Gateway configuration template for Yggdrasil Seedlings. Copy to config.json and fill in API keys.",
+  "_comment": "Bifrost AI Gateway configuration template for Yggdrasil Seeds. Copy to config.json and fill in API keys.",
   "server": {
     "port": 8080,
     "host": "0.0.0.0"
@@ -30,8 +30,8 @@
   ],
   "virtualKeys": [
     {
-      "name": "seedling-default",
-      "key": "${SEEDLING_VIRTUAL_KEY}",
+      "name": "seed-default",
+      "key": "${SEED_VIRTUAL_KEY}",
       "budget": {
         "maxCostPerMonth": 50.00,
         "maxRequestsPerMinute": 30,
