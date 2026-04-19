@@ -2,74 +2,75 @@
 #
 # Extends the base infrastructure/compose.yaml with Homelessness LA config.
 #
-# Usage:
-#   docker compose --project-directory . \
+# Usage (from repo root):
+#   docker compose --project-directory infrastructure \
 #     -f infrastructure/compose.yaml \
-#     -f seedlings/002-homelessness-la/config/compose.override.yaml up
+#     -f seeds/002-homelessness-la/config/compose.override.yaml up
 #
-# NOTE: Bind-mount paths are relative to the project directory (infrastructure/)
-# because that is the location of the first -f compose file.
+# Bind-mount paths below are relative to the project directory
+# (--project-directory infrastructure), so `../seeds/...` resolves to
+# repo_root/seeds/...
 
 services:
   agent-mission:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/mission.md:/workspace/souls/mission.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   agent-research:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/research.md:/workspace/souls/research.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/research.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/research.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   agent-analysis:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/analysis.md:/workspace/souls/analysis.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/analysis.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/analysis.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   agent-prototype:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/prototype.md:/workspace/souls/prototype.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/prototype.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/prototype.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   agent-documentation:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/documentation.md:/workspace/souls/documentation.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/documentation.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/documentation.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   agent-community:
     environment:
       - SEED_NAME=Homelessness LA
     volumes:
-      - ../seedlings/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
       - ./agent/souls/community.md:/workspace/souls/community.md:ro
-      - ../seedlings/002-homelessness-la/config/agents/community.yaml:/workspace/config/agent.yaml:ro
+      - ../seeds/002-homelessness-la/config/agents/community.yaml:/workspace/config/agent.yaml:ro
       - ../categories/housing:/workspace/category:ro
 
   publisher:
     environment:
       - SEED_NAME=Homelessness LA
-      - SEED_DIR=seedlings/002-homelessness-la
+      - SEED_DIR=seeds/002-homelessness-la
 
   bifrost:
     volumes:
-      - ../seedlings/002-homelessness-la/config/bifrost.json:/app/config.template.json:ro
+      - ../seeds/002-homelessness-la/config/bifrost.json:/app/config.template.json:ro

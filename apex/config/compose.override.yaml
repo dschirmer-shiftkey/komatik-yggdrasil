@@ -4,24 +4,29 @@
 # Cycles daily, reads the charter and all root-level findings, writes
 # cross-root patterns, drift flags, and the Contention Map.
 #
-# Boot with:
-#   docker compose --project-directory . \
+# Boot with (from repo root):
+#   docker compose --project-directory infrastructure \
 #     -f infrastructure/compose.yaml \
 #     -f apex/config/compose.override.yaml up
+#
+# Bind-mount paths below are relative to the project directory
+# (--project-directory infrastructure), NOT this file's location, so
+# `../apex/...` resolves to repo_root/apex/... and `./agent/...` resolves
+# to repo_root/infrastructure/agent/...
 
 services:
   # Apex-specific Bifrost config — adds Opus to allowed models. Mounted
   # over the base template path so the entrypoint picks it up.
   bifrost:
     volumes:
-      - ./bifrost.json:/app/config.template.json:ro
+      - ../apex/config/bifrost.json:/app/config.template.json:ro
 
   agent-mission:
     volumes:
-      - ../MISSION.md:/workspace/mission/MISSION.md:ro
-      - ../../docs/charter.md:/workspace/mission/CHARTER.md:ro
-      - ../../infrastructure/agent/souls/mission.md:/workspace/souls/mission.md:ro
-      - ./agents/mission.yaml:/workspace/config/agent.yaml:ro
+      - ../apex/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../docs/charter.md:/workspace/mission/CHARTER.md:ro
+      - ./agent/souls/mission.md:/workspace/souls/mission.md:ro
+      - ../apex/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
     environment:
       - SEED_NAME=Yggdrasil HQ
       - CHARTER_PATH=/workspace/mission/CHARTER.md
@@ -33,10 +38,10 @@ services:
 
   agent-synthesis:
     volumes:
-      - ../MISSION.md:/workspace/mission/MISSION.md:ro
-      - ../../docs/charter.md:/workspace/mission/CHARTER.md:ro
-      - ../../infrastructure/agent/souls/synthesis.md:/workspace/souls/synthesis.md:ro
-      - ./agents/synthesis.yaml:/workspace/config/agent.yaml:ro
+      - ../apex/MISSION.md:/workspace/mission/MISSION.md:ro
+      - ../docs/charter.md:/workspace/mission/CHARTER.md:ro
+      - ./agent/souls/synthesis.md:/workspace/souls/synthesis.md:ro
+      - ../apex/config/agents/synthesis.yaml:/workspace/config/agent.yaml:ro
     environment:
       - AGENT_ROLE=synthesis
       - AGENT_ID=synthesis
@@ -78,7 +83,7 @@ services:
   #         collaboration_required (root-vs-root), signal_routed
   event-processor:
     build:
-      context: ../../infrastructure/event-processor
+      context: ./event-processor
       dockerfile: Dockerfile
     container_name: apex-event-processor
     environment:
@@ -106,7 +111,7 @@ services:
   # Stage 3 routing. See docs/system-design.md §13.
   signal-aggregator:
     build:
-      context: ../../infrastructure/signal-aggregator
+      context: ./signal-aggregator
       dockerfile: Dockerfile
     container_name: apex-signal-aggregator
     depends_on:
