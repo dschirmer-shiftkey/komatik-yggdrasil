@@ -1,0 +1,50 @@
+# Seed 002 Homelessness LA — DRY-RUN Compose Override
+#
+# Phase 2 of the first-live-cycle plan. Layers on top of the base compose
+# and the seed override to:
+#   - Disable the publisher (no GitHub pushes)
+#   - Cap the next cycle interval at one year (effectively single-cycle)
+#   - Mount the dry-run Bifrost config ($5 cap, Sonnet-only, no OpenAI)
+#   - Mount dry-run agent YAMLs for mission/documentation/community
+#     (identical to production except preferred_model=Sonnet)
+#
+# Boot (from repo root):
+#   docker compose --project-directory infrastructure \
+#     -f infrastructure/compose.yaml \
+#     -f seeds/002-homelessness-la/config/compose.override.yaml \
+#     -f seeds/002-homelessness-la/config/compose.dry-run.yaml up
+#
+# See seeds/002-homelessness-la/config/dry-run/README.md for the runbook.
+
+services:
+  # Publisher OFF — no GitHub pushes during dry-run.
+  publisher:
+    deploy:
+      replicas: 0
+
+  # Scheduler: run one cycle on boot, then effectively pause.
+  # (CYCLE_INTERVAL_MINUTES=525960 ≈ 1 year; the first runCycle() fires
+  # immediately on startup before the interval kicks in.)
+  scheduler:
+    environment:
+      - CYCLE_INTERVAL_MINUTES=525960
+
+  # Bifrost: $5 cap, Sonnet-only, no OpenAI/Google keys needed.
+  bifrost:
+    volumes:
+      - ../seeds/002-homelessness-la/config/dry-run/bifrost.json:/app/config.template.json:ro
+
+  # Override mission/documentation/community to use Sonnet.
+  # Production configs leave these on gpt-4o-mini; dry-run standardizes
+  # on Sonnet so the cycle works with just ANTHROPIC_API_KEY.
+  agent-mission:
+    volumes:
+      - ../seeds/002-homelessness-la/config/dry-run/mission.yaml:/workspace/config/agent.yaml:ro
+
+  agent-documentation:
+    volumes:
+      - ../seeds/002-homelessness-la/config/dry-run/documentation.yaml:/workspace/config/agent.yaml:ro
+
+  agent-community:
+    volumes:
+      - ../seeds/002-homelessness-la/config/dry-run/community.yaml:/workspace/config/agent.yaml:ro
