@@ -8,11 +8,14 @@
 #   docker compose --project-directory . \
 #     -f infrastructure/compose.yaml \
 #     -f apex/config/compose.override.yaml up
-#
-# NOTE: Requires event-processor to support PROCESSOR_TYPE=apex (not yet
-# implemented — see apex/README.md "Dependencies Not Yet in Place").
 
 services:
+  # Apex-specific Bifrost config — adds Opus to allowed models. Mounted
+  # over the base template path so the entrypoint picks it up.
+  bifrost:
+    volumes:
+      - ./bifrost.json:/app/config.template.json:ro
+
   agent-mission:
     volumes:
       - ../MISSION.md:/workspace/mission/MISSION.md:ro
@@ -95,3 +98,34 @@ services:
     environment:
       - CYCLE_STEPS=synthesis,mission
       - CYCLE_INTERVAL_MINUTES=${APEX_CYCLE_INTERVAL_MINUTES:-1440}
+
+  # Public Signal Aggregator — Stage 2 of the Public Signal Pipeline.
+  # Polls GitHub issues labeled `public-signal`, clusters them via Bifrost,
+  # writes a Signal Digest finding, and emits `signal_digested` targeting
+  # apex. The apex synthesizer reads the digest on its next cycle for
+  # Stage 3 routing. See docs/system-design.md §13.
+  signal-aggregator:
+    build:
+      context: ../../infrastructure/signal-aggregator
+      dockerfile: Dockerfile
+    container_name: apex-signal-aggregator
+    depends_on:
+      - bifrost
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - GITHUB_REPO=${GITHUB_REPO:-dschirmer-shiftkey/komatik-yggdrasil}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - BIFROST_URL=http://bifrost:8080
+      - SEED_VIRTUAL_KEY=${SEED_VIRTUAL_KEY}
+      - DIGEST_MODEL=${SIGNAL_DIGEST_MODEL:-claude-sonnet-4-20250514}
+      - SIGNAL_ISSUE_LABEL=${SIGNAL_ISSUE_LABEL:-public-signal}
+      - AGGREGATION_INTERVAL_MINUTES=${AGGREGATION_INTERVAL_MINUTES:-10080}
+      - MIN_SIGNALS_FOR_DIGEST=${MIN_SIGNALS_FOR_DIGEST:-3}
+      - MIN_HOURS_BETWEEN_DIGESTS=${MIN_HOURS_BETWEEN_DIGESTS:-24}
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"

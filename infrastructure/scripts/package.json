@@ -1,0 +1,19 @@
+{
+  "name": "@komatik/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "E2E smoke tests and utility scripts for Yggdrasil infrastructure",
+  "scripts": {
+    "test:vertical-slice": "node --preserve-symlinks test-vertical-slice.js",
+    "test:apex-cycle": "node --preserve-symlinks test-apex-cycle.js"
+  },
+  "dependencies": {
+    "@komatik/event-processor": "file:../event-processor",
+    "@komatik/shared": "file:../shared",
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
