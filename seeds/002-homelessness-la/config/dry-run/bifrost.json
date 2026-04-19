@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
+  "_comment": "DRY-RUN Bifrost config for Seed 002. Caps monthly spend at $5, allows only Anthropic (no OpenAI/Google keys required). Mounted over the base template path by compose.dry-run.yaml.",
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0"
+  },
+  "providers": [
+    {
+      "name": "anthropic",
+      "provider": "anthropic",
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "models": ["claude-sonnet-4-20250514"],
+      "weight": 100
+    }
+  ],
+  "virtualKeys": [
+    {
+      "name": "seed-002-homelessness-la-dry-run",
+      "key": "${SEED_VIRTUAL_KEY}",
+      "budget": {
+        "maxCostPerMonth": 5.00,
+        "maxRequestsPerMinute": 10,
+        "maxTokensPerMinute": 40000
+      },
+      "allowedModels": ["claude-sonnet-4-20250514"]
+    }
+  ],
+  "defaults": {
+    "model": "claude-sonnet-4-20250514",
+    "maxRetries": 2,
+    "timeout": 60000
+  },
+  "metrics": {
+    "enabled": true,
+    "prometheus": {
+      "enabled": true,
+      "port": 9090
+    }
+  },
+  "logging": {
+    "level": "info",
+    "requestLogging": true,
+    "includeTokenCounts": true,
+    "includeCost": true
+  }
+}
