@@ -1,9 +1,13 @@
 # Yggdrasil Seed — Docker Compose Template
 #
-# Boots a fully operational Seed with one command:
-#   docker compose --project-directory . \
+# Boots a fully operational Seed with one command (run from repo root):
+#   docker compose --project-directory infrastructure \
 #     -f infrastructure/compose.yaml \
-#     -f seedlings/001-energy/config/compose.override.yaml up
+#     -f seeds/001-energy/config/compose.override.yaml up
+#
+# The --project-directory flag is REQUIRED. It pins relative paths
+# (build contexts like ./agent, config mounts) to infrastructure/,
+# so paths like ../seeds/... in override files resolve to repo_root/seeds/...
 #
 # Prerequisites:
 #   cp .env.example .env   # fill in API keys and passwords
