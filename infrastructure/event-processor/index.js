@@ -1,7 +1,7 @@
 /**
  * Knowledge Event Processor
  *
- * Lightweight service that runs at category and root tiers.
+ * Lightweight service that runs at category, root, and apex tiers.
  * Polls Supabase knowledge_events for unprocessed events, processes them:
  *
  * Category tier:
@@ -12,13 +12,27 @@
  *   - finding_promoted → acknowledge (synthesis is future work)
  *   - Posts knowledge_available events when new root findings are created
  *
+ * Apex tier (Yggdrasil HQ):
+ *   - finding_promoted (from any root)       → acknowledge; queued for the
+ *                                               daily synthesizer cycle
+ *   - signal_digested (from signal-aggregator)→ acknowledge; queued for
+ *                                               Stage 3 routing in next cycle
+ *   - potential_conflict (root-vs-root)      → acknowledge; queued for
+ *                                               collaboration mediation
+ *   - knowledge_available                    → acknowledge
+ *
+ *   Apex does not do synthesis work on the event path — the daily LLM
+ *   cycle (agent-synthesis) reads `findings` directly. The event-processor's
+ *   role here is to keep the queue drained and log what's accumulating so
+ *   the cycle has an accurate picture of pending work.
+ *
  * Environment:
  *   SUPABASE_URL              — Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY — Service role key
- *   PROCESSOR_TYPE            — "category" or "root"
- *   PROCESSOR_ID              — e.g., "housing" or "basic-needs"
+ *   PROCESSOR_TYPE            — "category", "root", or "apex"
+ *   PROCESSOR_ID              — e.g., "housing", "basic-needs", "apex"
  *   CATEGORY_ID               — category ID (for category tier)
- *   ROOT_ID                   — root ID
+ *   ROOT_ID                   — root ID (for root tier)
  *   POLL_INTERVAL_SECONDS     — how often to poll (default: 60)
  */
 
@@ -189,15 +203,64 @@ async function handleKnowledgeAvailable(supabase, event) {
   await markEventProcessed(supabase, event.id);
 }
 
+// ── Apex handlers ──────────────────────────────────────────────────────
+//
+// Apex synthesis is LLM-driven on a daily cycle (agent-synthesis reads
+// findings directly). The event-processor's job is to drain the queue
+// and log signals the next cycle should attend to.
+
+/**
+ * Apex: a root has promoted a finding. Candidate input for cross-root
+ * pattern detection and mission drift review on the next daily cycle.
+ */
+async function handleApexFindingPromoted(supabase, event) {
+  const { title, category_id } = event.payload || {};
+  console.log(
+    `[processor] Apex queued finding_promoted "${title}" from root=${event.source_id} category=${category_id}`
+  );
+  await markEventProcessed(supabase, event.id);
+}
+
+/**
+ * Apex: the signal-aggregator has published a Signal Digest. Apex's
+ * daily cycle runs Stage 3 routing — tags each theme with a target tier.
+ */
+async function handleApexSignalDigested(supabase, event) {
+  const digestFindingId = event.payload?.finding_id;
+  const themeCount = event.payload?.theme_count;
+  console.log(
+    `[processor] Apex queued signal_digested finding=${digestFindingId} themes=${themeCount}`
+  );
+  await markEventProcessed(supabase, event.id);
+}
+
+/**
+ * Apex: two roots have produced opposed findings. Queued for
+ * root-vs-root collaboration mediation (Collaboration Protocol §11).
+ */
+async function handleApexPotentialConflict(supabase, event) {
+  const parties = event.payload?.parties || [];
+  console.log(
+    `[processor] Apex queued potential_conflict parties=${parties.join(",")}`
+  );
+  await markEventProcessed(supabase, event.id);
+}
+
 // ── Event Router ───────────────────────────────────────────────────────
 
-const HANDLERS = {
+export const HANDLERS = {
   category: {
     finding_ready: handleFindingReady,
     knowledge_available: handleKnowledgeAvailable,
   },
   root: {
     finding_promoted: handleFindingPromoted,
+    knowledge_available: handleKnowledgeAvailable,
+  },
+  apex: {
+    finding_promoted: handleApexFindingPromoted,
+    signal_digested: handleApexSignalDigested,
+    potential_conflict: handleApexPotentialConflict,
     knowledge_available: handleKnowledgeAvailable,
   },
 };
@@ -263,7 +326,14 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error("[processor] Fatal error:", err);
-  process.exit(1);
-});
+// Only start the polling loop when this file is the CLI entry point
+// (so tests and scripts can import HANDLERS without side effects).
+import { fileURLToPath } from "url";
+const isEntryPoint = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error("[processor] Fatal error:", err);
+    process.exit(1);
+  });
+}

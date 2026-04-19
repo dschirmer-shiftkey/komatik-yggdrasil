@@ -43,24 +43,26 @@ docker compose --project-directory . \
   -f apex/config/compose.override.yaml up
 ```
 
-## Dependencies Not Yet in Place
+## Supporting Infrastructure
 
-The apex container spec is **planned**, not yet operational. Before it
-can boot in production, these must land:
+All pre-boot dependencies are in place:
 
-1. **DB migrations** — add to Supabase:
-   - `findings.source_type` enum: `apex`, `public_signal`
-   - `findings.confidence` enum: `contested`, `informational`
-   - New event types: `mission_drift_flagged`,
-     `cross_root_pattern_detected`, `potential_conflict`,
-     `collaboration_required`, `contested_tension`, `signal_submitted`,
-     `signal_digested`, `signal_routed`, `signal_decided`
-2. **Event processor** — add `PROCESSOR_TYPE=apex` support in
-   `infrastructure/event-processor/index.js` (currently only handles
-   `category` and `root` types)
-3. **Bifrost** — confirm Opus model entry in the project bifrost config
+1. **DB schema** — migration 005 adds apex/public_signal enum values,
+   `findings.spans_roots`, `findings.kind`, `findings.payload`, and the
+   `contention_map` view
+2. **Event processor** — `PROCESSOR_TYPE=apex` in
+   [`infrastructure/event-processor/index.js`](../infrastructure/event-processor/index.js)
+   drains `finding_promoted`, `signal_digested`, `potential_conflict`,
+   and `knowledge_available` events
+3. **Bifrost** — [`config/bifrost.json`](config/bifrost.json) adds
+   Opus + Sonnet to the provider models and virtual key allowlist; the
+   compose override mounts it over the base template
 4. **Public Signal intake** — GitHub issue template with `public-signal`
-   label, plus aggregation job (can land after apex boot)
+   label at [`.github/ISSUE_TEMPLATE/public-signal.yml`](../.github/ISSUE_TEMPLATE/public-signal.yml)
+5. **Public Signal aggregator** — [`infrastructure/signal-aggregator/`](../infrastructure/signal-aggregator/)
+   polls GitHub issues, LLM-clusters them via Bifrost, writes Signal
+   Digest findings + emits `signal_digested` events to apex. Boots with
+   the apex stack.
 
 ## Cost
 

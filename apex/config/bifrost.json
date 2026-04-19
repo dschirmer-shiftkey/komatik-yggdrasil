@@ -1,34 +1,47 @@
 {
+  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
+  "_comment": "Apex (Yggdrasil HQ) Bifrost config. Mounted at /app/config.template.json by apex/config/compose.override.yaml, overriding the base template. Adds Opus to both provider models and the virtual key's allowed models so apex agents (Synthesizer, Mission Guardian) can use it. Schema mirrors infrastructure/bifrost/config.template.json.",
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0"
+  },
   "providers": [
     {
       "name": "anthropic",
       "provider": "anthropic",
-      "api_key": "${ANTHROPIC_API_KEY}",
-      "weight": 100,
-      "models": [
-        "claude-opus-4-20250514",
-        "claude-sonnet-4-20250514"
-      ],
-      "rate_limit": {
-        "rpm": 5,
-        "tpm": 80000
-      }
+      "apiKey": "${ANTHROPIC_API_KEY}",
+      "models": ["claude-opus-4-20250514", "claude-sonnet-4-20250514"],
+      "weight": 100
     }
   ],
-  "virtual_keys": [
+  "virtualKeys": [
     {
       "name": "apex-yggdrasil-hq",
       "key": "${SEED_VIRTUAL_KEY}",
-      "allowed_models": [
-        "claude-opus-4-20250514",
-        "claude-sonnet-4-20250514"
-      ],
-      "default_model": "claude-opus-4-20250514",
       "budget": {
-        "max_cost_monthly": 40,
-        "max_rpm": 5,
-        "max_tpm": 80000
-      }
+        "maxCostPerMonth": 40.00,
+        "maxRequestsPerMinute": 5,
+        "maxTokensPerMinute": 80000
+      },
+      "allowedModels": ["claude-opus-4-20250514", "claude-sonnet-4-20250514"]
     }
-  ]
+  ],
+  "defaults": {
+    "model": "claude-opus-4-20250514",
+    "maxRetries": 2,
+    "timeout": 60000
+  },
+  "metrics": {
+    "enabled": true,
+    "prometheus": {
+      "enabled": true,
+      "port": 9090
+    }
+  },
+  "logging": {
+    "level": "info",
+    "requestLogging": true,
+    "includeTokenCounts": true,
+    "includeCost": true
+  }
 }

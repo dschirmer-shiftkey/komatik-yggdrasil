@@ -1,0 +1,19 @@
+{
+  "name": "@komatik/signal-aggregator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stage 2 of the Public Signal Pipeline — clusters GitHub-issue signals via Bifrost and publishes a Signal Digest to the world tree",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test:once": "RUN_ONCE=true node index.js"
+  },
+  "dependencies": {
+    "@komatik/shared": "file:../shared",
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
