@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_meta": {
+    "version": "0.1.0-scaffold",
+    "owner": "Latent Space LLC, DBA Komatik",
+    "purpose": "Source-of-truth capability map. Each capability_id is the join key for proposal authoring (Vol 2 §1, §2, §3, §6 + Vol 5 §5.2 + cost-volume scoping). Templates pull capability paragraphs and PI bio paragraphs by capability_id.",
+    "review_cycle": "Update on each Phase I/II submission. Annual full review.",
+    "last_updated": "2026-04-29T04:05:00Z",
+    "review_status": "scaffold — David fact-check Wed AM"
+  },
+
+  "company": {
+    "legal_name": "Latent Space LLC",
+    "dba": "Komatik",
+    "uei": "XHM9MQFR5VC9",
+    "sam_status": {
+      "active": true,
+      "last_verified": "2026-04-28",
+      "renewal_due": "2027-04-28"
+    },
+    "naics": ["541511", "541512", "541330", "541715"],
+    "size_certifications": {
+      "sdvosb": {
+        "certified": true,
+        "certifying_body": "VetCert (SBA)",
+        "verified_in_sam": "[CONFIRM: David — VetCert flow-through to SAM.gov visible by 2026-05-01? Set status here.]",
+        "expiration": "[CONFIRM: David — VetCert expiration date]"
+      },
+      "small_business": {
+        "certified": true,
+        "self_certified": true
+      }
+    },
+    "state": "CA",
+    "principal_address": "[CONFIRM: David — current registered principal address]",
+    "founder_status": {
+      "name": "David Schirmer",
+      "service_connected_disabled_veteran": true,
+      "disability_rating": "100%",
+      "branch": "U.S. Navy",
+      "rate_grade": "AC1 (E-6)",
+      "years_of_service": "~12"
+    }
+  },
+
+  "capabilities": [
+    {
+      "capability_id": "vector",
+      "display_name": "Vector",
+      "one_line": "ARTCC simulation environment with live ADS-B integration for air traffic control workforce training and airspace-operations research.",
+      "domain_tags": ["air_traffic_control", "airspace_operations", "nextgen", "atc_training", "human_factors", "ads_b", "simulation"],
+      "naics_alignment": ["541330", "541511", "541512"],
+      "trl": {
+        "current": "[CONFIRM: David — 3 or 4? Working sim with live ADS-B = component validated in lab → 3. If integrated subsystem demonstrated against operational sim conditions → 4.]",
+        "phase1_entry_target": "3-4",
+        "phase1_exit_target": "4-5",
+        "evidence_for_current_trl": [
+          "[CONFIRM: David — list working components: OpenSky-based ARTCC sim, ADS-B feed integration, sector handoff logic, etc.]",
+          "[CONFIRM: David — what's NOT yet done: CI/tests, formal eval against published baseline, scenario library size]"
+        ]
+      },
+      "prior_work_artifacts": [
+        "[CONFIRM: David — list demonstrable artifacts: code repo URL, demo video URL, internal test reports, screencasts]"
+      ],
+      "phase3_target_customers": ["FAA Tech Center", "NASA Ames AOL (Airspace Operations Lab)", "ATC training academies", "DoD ATC simulation programs (NAVAIR, AETC)"],
+      "fit_keywords_strong": ["airspace operations", "ATC", "air traffic control", "NextGen", "controller workforce", "ADS-B", "TRACON", "ARTCC", "AAM integration", "UTM", "controller training"],
+      "fit_keywords_adjacent": ["aviation safety", "human factors aviation", "decision support aviation"],
+      "exclusions": ["Vector is not a certified-simulator product; no FAA Part 142 or DOD aircrew certification claims."],
+      "pi_bio_paragraph_id": "pi_atc_operational",
+      "narrative_paragraph": "[NEEDS DAVID INPUT: 2-paragraph Vector capability description in your voice. Skeleton: Paragraph 1 = what Vector is today (ARTCC simulation with live ADS-B), what it does that nothing else does, the technical mechanism. Paragraph 2 = what it lets a researcher or training program do that they couldn't do before, with one concrete example. No banned words.]"
+    },
+    {
+      "capability_id": "base_camp",
+      "display_name": "Base Camp",
+      "one_line": "21-agent autonomous fleet for software development with multi-agent coordination, observability, and approval-pipeline gates.",
+      "domain_tags": ["multi_agent_systems", "agentic_software_development", "ai_observability", "autonomous_coordination", "human_in_the_loop"],
+      "naics_alignment": ["541511", "541512", "541715"],
+      "trl": {
+        "current": "[CONFIRM: David — 4 or 5? Operating fleet = at minimum subsystem demonstration in relevant environment.]",
+        "phase1_entry_target": "4-5",
+        "phase1_exit_target": "5-6",
+        "evidence_for_current_trl": [
+          "[CONFIRM: David — operational metrics: # of agents in active use, throughput stats, observability dashboard URL]"
+        ]
+      },
+      "prior_work_artifacts": [
+        "[CONFIRM: David — komatik-agents repo URL, Base Camp dashboard URL, any published case studies]"
+      ],
+      "phase3_target_customers": ["DARPA I2O", "AFRL/RI agentic-systems programs (ASIMOV, ANSR, KAIROS lineage)", "ONR Code 31 C5ISRT", "civilian agency software-modernization buyers"],
+      "fit_keywords_strong": ["multi-agent", "agentic systems", "autonomous coordination", "AI observability", "agent fleet", "human-in-the-loop AI"],
+      "fit_keywords_adjacent": ["software automation", "DevOps automation", "AI-assisted development"],
+      "exclusions": ["Not a general-purpose LLM platform; not a model-training shop; not an inference-infrastructure provider."],
+      "pi_bio_paragraph_id": "pi_software_systems",
+      "narrative_paragraph": "[NEEDS DAVID INPUT: 2-paragraph Base Camp capability description in your voice.]"
+    },
+    {
+      "capability_id": "trace",
+      "display_name": "Trace",
+      "one_line": "Audit-bundle tooling layer for AI and software systems. Builds defender-actionable audit graphs from system implementation, runtime behavior, and supply-chain provenance.",
+      "domain_tags": ["audit_tooling", "ai_governance", "software_assurance", "supply_chain_security", "decision_support_security"],
+      "naics_alignment": ["541511", "541512", "541715"],
+      "trl": {
+        "current": "[CONFIRM: David — 2 or 3? If concept validated on a specific system, TRL 3. If only methodology paper / design, TRL 2.]",
+        "phase1_entry_target": "2-3",
+        "phase1_exit_target": "3-4",
+        "evidence_for_current_trl": [
+          "[CONFIRM: David — what Trace has actually produced as artifacts vs. what's still on the methodology drawing board]"
+        ]
+      },
+      "prior_work_artifacts": [
+        "[CONFIRM: David — list any Trace-generated audit bundles, methodology docs, code repo if open]"
+      ],
+      "phase3_target_customers": ["FedRAMP-aligned cloud audit programs", "AI governance buyers (HHS, ED, civilian agencies)", "regulated commercial industries (financial services, healthcare)"],
+      "fit_keywords_strong": ["audit bundle", "AI governance", "software assurance", "supply chain assurance", "defender tooling", "decision support security"],
+      "fit_keywords_adjacent": ["cybersecurity", "compliance automation", "vulnerability management"],
+      "exclusions": ["Trace is not a SAST/DAST replacement; not a SIEM; not a vulnerability scanner. It is a layer above those tools producing audit-actionable artifacts."],
+      "pi_bio_paragraph_id": "pi_software_systems",
+      "narrative_paragraph": "[NEEDS DAVID INPUT: 2-paragraph Trace capability description in your voice. KEY: do not anchor on cryptographic-protocol analysis (this killed ASEMA). Anchor on audit-graph methodology over implementation/runtime/supply-chain.]"
+    }
+  ],
+
+  "_archive_capabilities": {
+    "_note": "Capabilities mentioned in V4.1 brand line that are not currently positioned for SBIR/grant work. Listed for completeness; not joined to active proposal templates.",
+    "ids": ["pack", "trailhead", "slipstream", "lodge", "cairn", "sundog", "kindling"]
+  }
+}

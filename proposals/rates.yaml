@@ -1,0 +1,157 @@
+# rates.yaml
+# Source-of-truth cost rates for Komatik / Latent Space LLC SBIR proposals.
+# Pulled by templates/cost-volume-phase1.md to populate Phase I cost narratives.
+#
+# ALL VALUES MARKED `provisional: true` MUST BE VALIDATED BY DAVID'S BOOKS
+# BEFORE SUBMISSION. Phase I budget integrity is a common rejection reason —
+# do not submit until [CONFIRM: David] tags are resolved.
+
+_meta:
+  version: 0.1.0-scaffold
+  owner: Latent Space LLC, DBA Komatik
+  uei: XHM9MQFR5VC9
+  last_updated: 2026-04-29T04:15:00Z
+  review_status: scaffold — David fact-check Wed AM
+  review_cycle: every Phase I/II submission; annual full review tied to fiscal year close
+
+# ---------- LABOR ----------
+# Hourly rates by role. Phase I budgets at federal SBIR caps require defensible
+# documentation: payroll history, board-approved rate, or BLS comparable.
+
+labor:
+  pi_principal_investigator:
+    hourly_rate_usd: 150.00
+    provisional: true
+    basis: "Latent Space LLC owner-PI rate. BLS InfoSec Analyst 90th-percentile San Diego MSA ~$135/hr [Source: BLS OEWS 2024]; +11% premium for SDVOSB owner-PI carrying both technical and commercialization load."
+    confirm:
+      - "[CONFIRM: David — actual paid rate from books OR board-approved rate set at company formation. SBIR reviewers expect documentation; the BLS comparable is backup, not primary."
+      - "[CONFIRM: David — annual escalation policy if proposal POP crosses fiscal year. SBIR allows declared escalation; default to 3% if undecided.]"
+    bls_backup:
+      occupation: "Information Security Analyst"
+      msa: "San Diego-Carlsbad-CA MSA"
+      percentile: 90
+      annual: 280800
+      hourly: 135.00
+      source: "BLS OEWS May 2024 [https://www.bls.gov/oes/current/oes_41740.htm]"
+      retrieved: "2026-04-28 — confirm latest available release before submission"
+
+  technical_staff_placeholder:
+    hourly_rate_usd: null
+    provisional: true
+    confirm:
+      - "[CONFIRM: David — Phase I sole-proprietor model assumes 100% PI labor for the $225K cap. If subcontractor/consultant roles are anticipated, add row here with rate and basis. SBIR Phase I requires PI commit ≥51% of effort to small business; subs cap at 33% of total budget.]"
+
+# ---------- FRINGE ----------
+# Fringe benefits as percentage of direct labor.
+# For sole-proprietor LLC owner-PI with no W-2 payroll, fringe is typically
+# limited to self-employment tax + actual paid benefits (health, retirement).
+# Federal SBIR reviewers will accept calculated rate IF documented.
+
+fringe:
+  rate_pct: 22.0
+  provisional: true
+  basis: "Self-employment tax 15.3% + provisional health/retirement benefits ~6.7%. Sole-proprietor LLC, no W-2 payroll. Owner-PI takes draws."
+  confirm:
+    - "[CONFIRM: David — actual fringe burden from 2025 books. Self-employment tax is fixed by IRS but health/retirement components must be documented. If LLC is single-member, federal SBIR auditors may require itemized fringe breakdown rather than blended rate.]"
+    - "[CONFIRM: David — alternatively, set fringe = 0 and direct-charge all PI compensation as labor. Some single-member LLCs do this. NASA SBIR is generally fine with either approach if documented.]"
+
+# ---------- INDIRECT (G&A / OVERHEAD) ----------
+# Indirect cost rate. For first-time SBIR submitters without a federally-negotiated
+# indirect rate (NICRA), DCAA-style "de minimis" rate is allowed. NASA SBIR Phase I
+# typically accepts up to 25% indirect without a NICRA, with documentation.
+
+indirect:
+  rate_pct: 18.0
+  provisional: true
+  basis: "Pre-NICRA. Covers software/cloud/tooling subscriptions, professional services, office allocation, business insurance not direct-charged. Below 25% safe-harbor for first-time SBIR submitters."
+  confirm:
+    - "[CONFIRM: David — actual indirect pool from 2025 books. If sandbagging the rate, fine. If under-estimating because books not closed, reconcile before submit. NASA reviewers will not penalize a low indirect rate but will reject inconsistent indirect treatment between this proposal and any prior federal work.]"
+    - "[CONFIRM: David — has Latent Space ever held a federally-negotiated indirect rate (NICRA) from any agency? If yes, MUST use that rate, not the de minimis 18%. If no NICRA exists, 18% scaffold is defensible.]"
+
+# ---------- FEE / PROFIT ----------
+# SBIR allows up to 7% fee on top of total cost (labor + fringe + indirect + ODC).
+# This is statutory — do not exceed.
+
+fee:
+  rate_pct: 7.0
+  provisional: false
+  basis: "SBIR statutory cap. NASA SBIR Phase I expects 0-7% fee. Komatik default is to take the full 7% — fee is the only mechanism for owner-PI to retain margin on Phase I work, and reviewers do not penalize the cap."
+  confirm:
+    - "Fee rate is statutory, not provisional, BUT David should confirm the strategic call to take full 7% vs. lower fee for any specific proposal. Lower fee can buy more direct-labor headroom under the $225K cap."
+
+# ---------- DIRECT CHARGE / EFFORT MIX ----------
+# Direct-charge ratio: fraction of PI hours that are direct-charged (billable
+# to the SBIR contract) vs. indirect. Used to validate that proposed PI hours
+# are realistic given Komatik's overall labor capacity.
+
+direct_charge_mix:
+  pi_total_annual_hours: 1040
+  pi_direct_charged_hours: 632
+  pi_indirect_hours: 408
+  direct_charge_ratio: 0.61
+  provisional: true
+  basis: "1040 hrs ≈ 50% of standard 2080 work-year, reflecting solo founder splitting time between SBIR direct-charge work and BD/admin/indirect. Direct-charge ratio 0.61 = 632/1040. Phase I 6-month POP at $150/hr × 632 hrs = $94,800 base labor (well under $225K cap, leaving room for fringe, indirect, fee, and ODC)."
+  confirm:
+    - "[CONFIRM: David — actual achievable PI hours over a 6-month NASA Phase I POP (May-Nov 2026), accounting for parallel work on NIWC SBSO pursuit, DoD SBIR 26.1 triage, and any other revenue work. If 632 direct-charge hours over 6 mo is unrealistic, scale down NOW rather than discovering it in execution.]"
+    - "[CONFIRM: David — 1040 total annual hours assumes part-time owner-PI. If David is full-time on Komatik (2080 hrs/yr), the direct-charge fraction can rise but the PI-effort-on-Phase-I commitment must still satisfy SBIR ≥51% rule.]"
+
+# ---------- OTHER DIRECT COSTS (ODC) ----------
+# Travel, materials, subscriptions, cloud, subcontracts. NASA Phase I typically
+# allocates 5-15% of total budget to ODC.
+
+odc:
+  travel:
+    placeholder_usd: 3000
+    provisional: true
+    basis: "1 NASA program-office trip (e.g. Ames or HQ) for Phase I kickoff or mid-period review. Per GSA per-diem + economy airfare."
+    confirm:
+      - "[CONFIRM: David — does proposal anticipate any specific travel? NASA Phase I is mostly remote, but a mid-period in-person review is increasingly common."
+
+  cloud_compute:
+    placeholder_usd: 2000
+    provisional: true
+    basis: "Compute and storage for Vector ARTCC sim during scenario library expansion phase. AWS/GCP at ~$300/mo × 6 mo, plus headroom for one full-scenario stress test."
+    confirm:
+      - "[CONFIRM: David — actual compute footprint for Vector. If higher (say $1000/mo for live-ADS-B feed processing), budget MUST reflect. Under-budgeted compute is a common Phase I execution failure."
+
+  software_subscriptions:
+    placeholder_usd: 1200
+    provisional: true
+    basis: "Direct-charge fraction of subscriptions used specifically for the project (separate from indirect-pool subscriptions). $200/mo × 6 mo placeholder."
+    confirm:
+      - "[CONFIRM: David — separate direct-charge subscriptions from indirect-pool subscriptions. SBIR auditors will reject double-charging."
+
+  subcontracts:
+    placeholder_usd: 0
+    provisional: true
+    basis: "Phase I default = no subcontracts. Solo PI owns all work. SBIR Phase I caps subcontract effort at 33% of total budget."
+    confirm:
+      - "[CONFIRM: David — any planned subcontract or consultant engagement for the NASA Appendix 2026A proposal? If yes, add line and document scope."
+
+# ---------- PHASE I CAP CHECK ----------
+# Quick math sanity check using scaffolded values. Real cost volume in
+# templates/cost-volume-phase1.md will use formulas, not these snapshots.
+
+phase1_cap_check:
+  cap_usd: 225000
+  pop_months: 6
+  scaffolded_total_estimate_usd: 188962
+  headroom_usd: 36038
+  note: "Scaffold total $188,962 carries forward from ASEMA Vol 3. NOT the NASA Phase I budget — placeholder pending re-build against Appendix 2026A SOW. Use cost-volume-phase1.md template once gate parse passes."
+  confirm:
+    - "Re-build full cost narrative against NASA SOW once gate-0 / gate-1 parse complete (Wed AM). Do NOT carry the ASEMA $188,962 forward as a number — only as a working-capacity sanity check."
+
+# ---------- DOCUMENTATION REQUIREMENTS ----------
+# What David needs to produce or have on hand for cost-volume defense.
+
+documentation_required:
+  - item: "Latent Space LLC payroll history or owner-PI rate resolution"
+    status: "[CONFIRM: David — exists? If no formal payroll, board resolution setting PI rate is the standard substitute]"
+  - item: "2025 indirect cost pool reconciliation"
+    status: "[CONFIRM: David — books closed for 2025? Indirect pool calculable?]"
+  - item: "Health/retirement benefit documentation for fringe substantiation"
+    status: "[CONFIRM: David — what's actually being paid into health/retirement from LLC]"
+  - item: "Quotes or pricing for any planned ODC (cloud, software, travel)"
+    status: "[CONFIRM: David — current vendor pricing pages or recent invoices]"
+  - item: "Any prior NICRA — federal indirect rate agreement"
+    status: "[CONFIRM: David — does Latent Space hold any NICRA from any agency? Almost certainly no, but must be confirmed before claiming pre-NICRA status]"
