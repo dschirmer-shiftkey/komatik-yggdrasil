@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_meta": {
+    "version": "0.1.0",
+    "purpose": "Post-mortem structured SOW parse for DARPA HR0011SB20254 Topic R12 (ASEMA). This is the SEED FAILING CASE for the future grants-specialist agent's gate-0/gate-1 pipeline. Pair with the NASA Appendix 2026A parse (forthcoming) as the seed PASSING CASE.",
+    "parse_date": "2026-04-29",
+    "parser": "manual (strategist scaffolded; koda corrected hallucinated topic_title and unverified faq_url on extraction to cairn/proposals/)",
+    "parser_version": "n/a — pre-agent",
+    "outcome_summary": "FAIL at gate-0 (phase_eligibility) AND gate-1 (scope_exclusions ∩ proposed_pitch). Withdraw and redirect to NASA SBIR 26-27 Appendix 2026A.",
+    "extraction_corrections": [
+      "topic_title fixed: was 'Adaptive Secure Encrypted Messaging Architecture (ASEMA)' (hallucinated); actual per archive/asema-2026-04/vol2_v1.md line 3 is 'Assessing Security of Encrypted Messaging Applications (ASEMA)'",
+      "faq_url marked [CONFIRM]: strategist scaffolded a plausible-pattern URL that was not independently verified. Verify against DARPA SBIR portal before this record seeds the grants-agent test set."
+    ]
+  },
+
+  "opportunity": {
+    "agency": "DARPA",
+    "office": "I2O",
+    "program": "DARPA SBIR/STTR 25.4",
+    "solicitation_id": "HR0011SB20254",
+    "topic_id": "HR0011SB20254-12",
+    "topic_title": "Assessing Security of Encrypted Messaging Applications (ASEMA)",
+    "release_date": "[CONFIRM]",
+    "open_date": "[CONFIRM]",
+    "close_date": "[CONFIRM]",
+    "primary_doc_url": "[CONFIRM: David — DARPA SBIR portal direct topic URL]",
+    "faq_url": "[CONFIRM: David — strategist scaffolded https://www.darpa.mil/sites/default/files/attachment/2025-12/faq-hr0011sb20254-12-4.pdf based on URL pattern; not independently verified]",
+    "faq_retrieved": "[CONFIRM: pending FAQ URL verification]"
+  },
+
+  "phase_eligibility": {
+    "values_allowed": ["DP2"],
+    "values_excluded": ["Phase I (DP1)"],
+    "evidence": {
+      "source": "FAQ Q23",
+      "quote_paraphrase": "DARPA confirmed Topic R12 is open to Direct-to-Phase-II (DP2) submissions only. No Phase I submissions accepted.",
+      "verbatim_required": "[CONFIRM: David — extract verbatim FAQ Q23 text into this field for the agent training set]"
+    },
+    "komatik_status": "ineligible",
+    "komatik_reason": "Komatik does not have prior Phase-I-equivalent funded work that would qualify for DP2 under DARPA's feasibility-evidence requirements."
+  },
+
+  "scope_inclusions": [
+    "[CONFIRM: David — extract from R12 SOW text the explicit 'in scope' enumeration: messaging-architecture adaptation, threat-model coverage, post-quantum readiness language, etc.]"
+  ],
+
+  "scope_exclusions": [
+    {
+      "id": "exclusion_crypto_protocols",
+      "language": "Cryptographic-protocol design and analysis (key exchange, primitives, formal protocol verification at the wire-format level) is OUT of scope.",
+      "evidence": {
+        "source": "FAQ Q1",
+        "quote_paraphrase": "DARPA explicitly excluded cryptographic-protocol focus from the R12 work scope. Proposers focusing on protocol design or analysis will be deemed non-responsive.",
+        "verbatim_required": "[CONFIRM: David — extract verbatim FAQ Q1 text]"
+      }
+    },
+    {
+      "id": "exclusion_placeholder",
+      "language": "[CONFIRM: David — re-read SOW for any other named exclusions: e.g. 'this topic is not interested in...', 'proposers should NOT submit...', 'out of scope:']"
+    }
+  ],
+
+  "evidence_requirements": [
+    "[CONFIRM: David — DP2 feasibility evidence requirements: prior funded work, demonstration milestones, IP position]",
+    "[CONFIRM: David — any letters of intent, customer commitments, or transition partners required by SOW]"
+  ],
+
+  "evaluation_criteria": [
+    "[CONFIRM: David — extract from SOW the verbatim evaluation criteria with weights, in order: typically Technical Approach > Commercial Potential > Personnel > Cost Reasonableness]"
+  ],
+
+  "submission_constraints": {
+    "page_limit": "[CONFIRM: David — DARPA Phase II tech volume page limit]",
+    "page_limit_unit": "pages",
+    "format": "[CONFIRM]",
+    "commercial_potential_volume_required": "[CONFIRM]",
+    "cost_volume_format": "[CONFIRM — DARPA-specific cost templates]",
+    "submission_portal": "DSIP",
+    "max_award_usd": "[CONFIRM — DP2 typical $1.7M-$2M]",
+    "pop_months": "[CONFIRM — typically 24]"
+  },
+
+  "proposed_pitch": {
+    "anchored_on": "Signal Protocol-style ratcheted messaging with audit-bundle layer (Trace) for defender-actionable forensics on cryptographic-protocol behavior",
+    "draft_artifact": "../vol2_v1.md (preserved for archive value only — not reusable as written)",
+    "fail_modes": [
+      {
+        "gate": "gate-0",
+        "rule": "phase_eligibility intersection check",
+        "result": "FAIL — pitch is structured for Phase I (DP1); R12 accepts DP2 only",
+        "evidence": "FAQ Q23"
+      },
+      {
+        "gate": "gate-1",
+        "rule": "scope_exclusions ∩ proposed_pitch primary anchor",
+        "result": "FAIL — pitch primary anchor is cryptographic-protocol analysis (Signal Protocol layer), which is in scope_exclusions[exclusion_crypto_protocols]",
+        "evidence": "FAQ Q1"
+      }
+    ]
+  },
+
+  "capability_match": {
+    "candidate_capabilities": ["trace"],
+    "best_fit_capability_id": "trace",
+    "fit_keyword_overlap_strong": ["audit bundle", "defender tooling", "decision support security"],
+    "fit_keyword_overlap_adjacent": ["cybersecurity"],
+    "exclusion_conflicts": [
+      {
+        "capability_id": "trace",
+        "trace_exclusion": "Trace is not a SAST/DAST replacement; not a SIEM; not a vulnerability scanner. It is a layer above those tools producing audit-actionable artifacts.",
+        "topic_exclusion": "exclusion_crypto_protocols",
+        "conflict_type": "secondary",
+        "note": "The Trace capability itself does not violate scope. The PROPOSED PITCH violated scope by anchoring Trace on cryptographic-protocol forensics — a use-case that pulls Trace into the excluded zone. Lesson: capability fit is necessary but not sufficient; the framing of the application matters."
+      }
+    ]
+  },
+
+  "decision": {
+    "go_no_go": "no_go",
+    "decision_date": "2026-04-29",
+    "decision_rationale": "Two independent disqualifiers: phase ineligibility and scope-exclusion conflict. Either alone would justify withdraw; together they are conclusive.",
+    "redirect_target": {
+      "agency": "NASA",
+      "program": "NASA SBIR 26-27",
+      "solicitation_id": "80NSSC26R0003",
+      "appendix": "2026A",
+      "subtopic": "Technologies that improve the safety, efficiency, and management of airspace operations",
+      "lead_capability_id": "vector",
+      "rationale": "Vector capability has direct keyword fit ('airspace operations'), Phase I eligibility, and PI ATC operational background as evaluation differentiator."
+    }
+  },
+
+  "agent_training_notes": {
+    "lessons_for_pipeline": [
+      "Phase eligibility check (gate-0) MUST run BEFORE any drafting effort. Cost: ~30 sec parse vs. ~40 hrs of dead authoring.",
+      "Scope-exclusion check (gate-1) requires reading FAQs and Q&A docs in addition to primary SOW. Solicitations frequently use FAQs to narrow scope after publication.",
+      "Capability-fit keyword match alone is insufficient. The PITCH FRAMING can pull a valid capability into an excluded zone — gate-1 must check pitch anchor against exclusions, not just capability tags against inclusions.",
+      "Failing case structure: this record is the canonical failing-case shape. Future grants-agent should produce records with this exact schema for every parsed opportunity, regardless of go/no-go outcome.",
+      "Confirm verbatim quotes: agent must extract verbatim SOW/FAQ text into evidence fields, not paraphrase. Paraphrase is acceptable for human review but not for agent re-training."
+    ],
+    "open_evidence_extraction": [
+      "Verbatim FAQ Q1 text (currently [CONFIRM])",
+      "Verbatim FAQ Q23 text (currently [CONFIRM])",
+      "Full SOW text for in-scope and exclusion enumeration",
+      "Evaluation criteria with weights"
+    ]
+  }
+}
