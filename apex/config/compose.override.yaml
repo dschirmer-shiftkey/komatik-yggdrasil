@@ -29,6 +29,10 @@ services:
       - ../apex/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
     environment:
       - SEED_NAME=Yggdrasil HQ
+      - SOURCE_TYPE=apex
+      - SOURCE_ID=apex
+      - CATEGORY_ID=
+      - ROOT_ID=
       - CHARTER_PATH=/workspace/mission/CHARTER.md
     deploy:
       resources:
@@ -46,6 +50,10 @@ services:
       - AGENT_ROLE=synthesis
       - AGENT_ID=synthesis
       - SEED_NAME=Yggdrasil HQ
+      - SOURCE_TYPE=apex
+      - SOURCE_ID=apex
+      - CATEGORY_ID=
+      - ROOT_ID=
       - CHARTER_PATH=/workspace/mission/CHARTER.md
     deploy:
       resources:

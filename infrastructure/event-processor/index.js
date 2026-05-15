@@ -43,6 +43,7 @@ import {
   pollKnowledgeEvents,
   markEventProcessed,
   postKnowledgeEvent,
+  publishFinding,
 } from "@komatik/shared/supabase";
 
 const PROCESSOR_TYPE = process.env.PROCESSOR_TYPE || "category";
@@ -451,6 +452,121 @@ async function handleApexPotentialConflict(supabase, event) {
   await markEventProcessed(supabase, event.id);
 }
 
+
+function summarizePosition(position) {
+  return {
+    finding_id: position.id,
+    source_type: position.source_type,
+    source_id: position.source_id,
+    title: position.title,
+    summary: position.summary,
+    position: position.payload?.position || position.summary,
+  };
+}
+
+async function handleApexCollaborationPositionPublished(supabase, event) {
+  const findingId = event.payload?.finding_id;
+  const collaborationId = event.payload?.collaboration_id;
+
+  console.log(
+    `[processor] Apex received collaboration_position finding=${findingId} collaboration=${collaborationId}`
+  );
+
+  if (!collaborationId) {
+    console.warn(`[processor] collaboration_position_published missing collaboration_id:`, event.id);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const { data: positions, error } = await supabase
+    .from("findings")
+    .select("id, title, summary, content, source_type, source_id, root_id, category_id, payload, spans_roots")
+    .eq("kind", "collaboration_position")
+    .eq("payload->>collaboration_id", collaborationId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(`[processor] Could not query collaboration positions:`, error.message);
+    return;
+  }
+
+  if ((positions || []).length < 2) {
+    console.log(`[processor] Collaboration ${collaborationId} has ${positions?.length || 0}/2 positions — waiting`);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("findings")
+    .select("id")
+    .eq("kind", "contested_tension")
+    .eq("payload->>collaboration_id", collaborationId)
+    .limit(1);
+
+  if (existingError) {
+    console.error(`[processor] Could not check existing contested tension:`, existingError.message);
+    return;
+  }
+
+  if ((existing || []).length > 0) {
+    console.log(`[processor] Contested tension already exists for collaboration=${collaborationId}`);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const [positionA, positionB] = positions;
+  const parties = [...new Set(positions.map((position) => position.source_id).filter(Boolean))];
+  const spansRoots = [...new Set(positions.flatMap((position) => position.spans_roots || []).concat(
+    positions.map((position) => position.root_id).filter(Boolean)
+  ))];
+  const sharedQuestion = event.payload?.shared_question || positionA.payload?.shared_question || positionB.payload?.shared_question;
+
+  const tension = await publishFinding(supabase, {
+    sourceType: "apex",
+    sourceId: PROCESSOR_ID,
+    categoryId: null,
+    rootId: null,
+    title: `Contested tension: ${sharedQuestion || collaborationId}`,
+    summary: `Collaboration ${collaborationId} produced multiple positions that require reconciliation or remain structurally contested.`,
+    content:
+      `# Contested tension\n\n` +
+      `## Shared question\n${sharedQuestion || "Not specified"}\n\n` +
+      `## Position A — ${positionA.source_id}\n${positionA.summary}\n\n` +
+      `## Position B — ${positionB.source_id}\n${positionB.summary}\n\n` +
+      `## Structural reason\nAutomated apex reconciliation requires human/LLM synthesis in the next apex cycle; until then this is tracked as a contested tension.`,
+    confidence: "contested",
+    kind: "contested_tension",
+    spansRoots,
+    payload: {
+      collaboration_id: collaborationId,
+      shared_question: sharedQuestion,
+      position_a: positionA.payload?.position || positionA.summary,
+      position_b: positionB.payload?.position || positionB.summary,
+      structural_reason: "Target tiers produced distinct collaboration positions; apex synthesis must reconcile conditions or preserve the tension.",
+      parties,
+      positions: positions.map(summarizePosition),
+      source_event_id: event.id,
+    },
+  });
+
+  await postKnowledgeEvent(supabase, {
+    eventType: "contested_tension",
+    sourceType: "apex",
+    sourceId: PROCESSOR_ID,
+    targetType: "apex",
+    targetId: "apex",
+    payload: {
+      finding_id: tension.id,
+      collaboration_id: collaborationId,
+      title: `Contested tension: ${sharedQuestion || collaborationId}`,
+      parties,
+    },
+  });
+
+  console.log(`[processor] Published contested_tension ${tension.id} for collaboration=${collaborationId}`);
+  await markEventProcessed(supabase, event.id);
+}
+
 // ── Event Router ───────────────────────────────────────────────────────
 
 export const HANDLERS = {
@@ -468,6 +584,7 @@ export const HANDLERS = {
     finding_promoted: handleApexFindingPromoted,
     signal_digested: handleApexSignalDigested,
     potential_conflict: handleApexPotentialConflict,
+    collaboration_position_published: handleApexCollaborationPositionPublished,
     knowledge_available: handleKnowledgeAvailable,
   },
 };

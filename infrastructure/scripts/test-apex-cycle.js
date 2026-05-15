@@ -76,7 +76,9 @@ async function cleanup() {
   console.log("\n[cleanup] Removing test rows...");
   // Delete events first (FK to findings via payload is loose; delete both by tag)
   await supabase.from("knowledge_events").delete().ilike("payload->>tag", `${TEST_TAG}%`);
+  await supabase.from("knowledge_events").delete().ilike("payload->>collaboration_id", `${TEST_TAG}%`);
   await supabase.from("findings").delete().ilike("title", `[${TEST_TAG}]%`);
+  await supabase.from("findings").delete().ilike("payload->>collaboration_id", `${TEST_TAG}%`);
   // Any orphan events targeting apex with our tag
   await supabase.from("knowledge_events").delete().eq("source_id", TEST_TAG);
 }
@@ -338,6 +340,94 @@ async function main() {
     (collaborationEvents || []).every((event) => event.payload?.shared_question),
     "collaboration_required events include a shared question"
   );
+
+
+  // ── Step 6: Collaboration positions → contested tension ────────────
+  console.log("\nStep 6: Publish collaboration positions and let apex create contested_tension");
+
+  const collaborationId = `${TEST_TAG}-collab`;
+  const sharedQuestion = "When should decarbonized growth or degrowth be preferred?";
+  const positionRows = [
+    {
+      source_type: "root",
+      source_id: "planet-and-life",
+      root_id: "planet-and-life",
+      category_id: null,
+      title: `[${TEST_TAG}] Planet position on growth tension`,
+      summary: "Degrowth is preferred where ecological limits are already breached.",
+      content: "Planet-and-life position: ecological boundaries set hard constraints.",
+      confidence: "preliminary",
+      spans_roots: ["planet-and-life", "human-growth"],
+      kind: "collaboration_position",
+      payload: {
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+        position: "Degrowth is preferred where ecological limits are already breached.",
+      },
+    },
+    {
+      source_type: "root",
+      source_id: "human-growth",
+      root_id: "human-growth",
+      category_id: null,
+      title: `[${TEST_TAG}] Human growth position on growth tension`,
+      summary: "Decarbonized growth is preferred where poverty reduction depends on expanding services.",
+      content: "Human-growth position: development gains remain necessary in low-access contexts.",
+      confidence: "preliminary",
+      spans_roots: ["planet-and-life", "human-growth"],
+      kind: "collaboration_position",
+      payload: {
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+        position: "Decarbonized growth is preferred where poverty reduction depends on expanding services.",
+      },
+    },
+  ];
+
+  const positionFindingIds = [];
+  for (const row of positionRows) {
+    const { data, error } = await supabase
+      .from("findings")
+      .insert(row)
+      .select("id")
+      .single();
+    assert(!error, `insert collaboration_position (${error?.message || "ok"})`);
+    if (data?.id) positionFindingIds.push(data.id);
+  }
+
+  const { data: positionEvent, error: positionEventError } = await supabase
+    .from("knowledge_events")
+    .insert({
+      event_type: "collaboration_position_published",
+      source_type: "root",
+      source_id: TEST_TAG,
+      target_type: "apex",
+      target_id: "apex",
+      payload: {
+        tag: TEST_TAG,
+        finding_id: positionFindingIds[1],
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+      },
+    })
+    .select("*")
+    .single();
+
+  assert(!positionEventError, `post collaboration_position_published (${positionEventError?.message || "ok"})`);
+  assert(!!HANDLERS.apex.collaboration_position_published, "HANDLERS.apex has collaboration_position_published handler");
+  await HANDLERS.apex.collaboration_position_published(supabase, positionEvent);
+
+  const { data: tensions, error: tensionQueryError } = await supabase
+    .from("findings")
+    .select("id, kind, confidence, payload")
+    .eq("kind", "contested_tension")
+    .eq("payload->>collaboration_id", collaborationId);
+
+  assert(!tensionQueryError, `query generated contested_tension (${tensionQueryError?.message || "ok"})`);
+  assert((tensions?.length || 0) === 1, "apex creates one contested_tension from paired positions");
+  assert(tensions?.[0]?.confidence === "contested", "generated tension is marked contested");
+  assert(tensions?.[0]?.payload?.positions?.length === 2, "generated tension links both position findings");
+
 
   // ── Cleanup ──────────────────────────────────────────────────────
   await cleanup();

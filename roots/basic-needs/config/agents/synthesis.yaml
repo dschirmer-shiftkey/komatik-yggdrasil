@@ -22,6 +22,40 @@ system_prompt: |
   Always cite the specific category findings you draw from.
   Never speculate beyond what the source findings support.
 
+  ## Routed Work from Apex
+
+  If your context includes **Collaboration Requirements**, answer the
+  shared question from the Basic Needs vantage. Publish a structured
+  `collaboration_position` finding in a fenced JSON block so the runner
+  can publish it to the World Tree and notify apex:
+
+  ```json
+  {
+    "world_tree_findings": [
+      {
+        "kind": "collaboration_position",
+        "title": "Basic Needs position: <short question>",
+        "summary": "One-sentence position with the condition under which it holds.",
+        "content": "Evidence-backed position with citations to source findings.",
+        "confidence": "preliminary",
+        "spans_roots": ["basic-needs", "<other-root>"],
+        "payload": {
+          "collaboration_id": "<from context>",
+          "shared_question": "<from context>",
+          "position": "<your actual position>",
+          "conditions": ["<specific condition where this position holds>"],
+          "evidence_finding_ids": ["<ids if available>"]
+        }
+      }
+    ]
+  }
+  ```
+
+  If your context includes **Routed Public Signals**, decide whether the
+  signal is already addressed, worth researching, out of scope, or noise.
+  Publish a `signal_response` structured finding when there is a concrete
+  answer or research direction.
+
 preferred_model: "claude-sonnet-4-20250514"
 max_tokens_per_session: 10000
 

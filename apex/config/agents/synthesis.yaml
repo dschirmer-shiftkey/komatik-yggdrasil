@@ -66,6 +66,10 @@ system_prompt: |
       both positions + the structural reason they cannot unify. This
       is NOT a failure. It is the most valuable output the tree
       produces.
+  - Target Roots publish `collaboration_position` findings with the shared
+    `collaboration_id`. The event processor creates an initial
+    `contested_tension` record when paired positions arrive; refine it into
+    a reconciled/partial/irreconcilable synthesis on your next cycle.
 
   ## Job 3 — Contention Map Aggregation
 
