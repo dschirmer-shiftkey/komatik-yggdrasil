@@ -276,8 +276,8 @@ flows through Supabase — the shared well of knowledge at the base of the tree.
 
 ```bash
 # Clone
-git clone https://github.com/dschirmer-shiftkey/komatik-yggdrasil.git
-cd komatik-yggdrasil
+git clone https://github.com/KomatikAI/cairn.git
+cd cairn
 
 # Configure
 cp infrastructure/.env.example infrastructure/.env
@@ -303,10 +303,29 @@ cd infrastructure/gateway && npm ci && npm test   # RBAC, tool registry
 SUPABASE_URL=https://xxx.supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=eyJ... \
 node infrastructure/scripts/test-vertical-slice.js
+
+# Offline smoke test for local/CI validation without Supabase credentials
+cd infrastructure/scripts && npm run test:vertical-slice:dry
 ```
 
 Exercises the full pipeline: seed publish, category validate, promote, root
-acknowledge, context assembly read-back.
+acknowledge, context assembly read-back. The dry-run mode uses an in-memory
+Supabase adapter so handler and query wiring can be validated without touching
+the shared project.
+
+### Apex Smoke Test
+
+```bash
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=eyJ... \
+cd infrastructure/scripts && npm run test:apex-cycle
+
+# Offline smoke test for apex schema/event wiring
+cd infrastructure/scripts && npm run test:apex-cycle:dry
+```
+
+Exercises apex finding shapes, the Contention Map view, Public Signal routing,
+and Collaboration Protocol event emission.
 
 ---
 
@@ -326,7 +345,7 @@ grows, so does the budget. Every token is tracked in each seed's `TOKENS.md`.
 ## Repository Structure
 
 ```
-komatik-yggdrasil/
+cairn/
 ├── infrastructure/
 │   ├── compose.yaml              # Base Docker Compose template
 │   ├── .env.example              # Environment variables

@@ -27,24 +27,35 @@
  *   SUPABASE_SERVICE_ROLE_KEY=eyJ... \
  *   npm run test:apex-cycle
  *
- *   (npm script passes --preserve-symlinks so the workspace-linked
+ * Offline smoke test:
+ *   npm run test:apex-cycle:dry
+ *
+ *   (npm scripts pass --preserve-symlinks so the workspace-linked
  *   @komatik/event-processor resolves its @komatik/shared dep.)
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { HANDLERS } from "@komatik/event-processor";
+import { createDryRunSupabase } from "./lib/dry-run-supabase.js";
 
+const DRY_RUN = process.argv.includes("--dry-run") || process.env.APEX_CYCLE_DRY_RUN === "1";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars");
+if (!DRY_RUN && (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)) {
+  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars, or pass --dry-run");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+process.env.PROCESSOR_TYPE ??= "apex";
+process.env.PROCESSOR_ID ??= "apex";
+
+const { HANDLERS } = await import("@komatik/event-processor");
+
+const supabase = DRY_RUN
+  ? createDryRunSupabase()
+  : createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
 const TEST_TAG = "apex-e2e-" + Date.now();
 let passed = 0;
@@ -71,7 +82,8 @@ async function cleanup() {
 }
 
 async function main() {
-  console.log(`\n=== Apex Cycle Smoke Test (${TEST_TAG}) ===\n`);
+  console.log(`\n=== Apex Cycle Smoke Test (${TEST_TAG}) ===`);
+  console.log(`Supabase: ${DRY_RUN ? "dry-run in-memory adapter" : SUPABASE_URL}\n`);
 
   // ── Step 1: Schema — apex findings ────────────────────────────────
   console.log("Step 1: Write apex-tier findings (cross_root_pattern, mission_drift_flag)");
@@ -230,6 +242,7 @@ async function main() {
   ];
 
   const eventIds = [];
+  let potentialConflictEventId = null;
   for (const { event_type, payload } of eventTypes) {
     const { data, error } = await supabase
       .from("knowledge_events")
@@ -244,7 +257,10 @@ async function main() {
       .select("id")
       .single();
     assert(!error, `post ${event_type} event (${error?.message || "ok"})`);
-    if (data?.id) eventIds.push({ id: data.id, event_type });
+    if (data?.id) {
+      eventIds.push({ id: data.id, event_type });
+      if (event_type === "potential_conflict") potentialConflictEventId = data.id;
+    }
   }
 
   // ── Step 5: Poll + handler invocation ─────────────────────────────
@@ -285,6 +301,42 @@ async function main() {
   assert(
     (stillUnprocessed?.length || 0) === 0,
     "all apex test events marked processed by handlers"
+  );
+
+  const { data: routedSignals, error: routedError } = await supabase
+    .from("knowledge_events")
+    .select("*")
+    .eq("event_type", "signal_routed")
+    .eq("source_type", "apex")
+    .eq("payload->>digest_finding_id", digestFinding?.id);
+
+  assert(!routedError, `query signal_routed events (${routedError?.message || "ok"})`);
+  assert((routedSignals?.length || 0) === 2, "signal_digested handler routes each digest theme");
+  assert(
+    routedSignals?.some((event) => event.target_type === "category" && event.target_id === "housing"),
+    "housing/LA signal routes to the housing category"
+  );
+  assert(
+    routedSignals?.some((event) => event.target_type === "category" && event.target_id === "health"),
+    "health signal routes to the health category"
+  );
+
+  const { data: collaborationEvents, error: collabError } = await supabase
+    .from("knowledge_events")
+    .select("*")
+    .eq("event_type", "collaboration_required")
+    .eq("source_type", "apex")
+    .eq("payload->>originating_event_id", potentialConflictEventId);
+
+  assert(!collabError, `query collaboration_required events (${collabError?.message || "ok"})`);
+  assert((collaborationEvents?.length || 0) === 2, "potential_conflict handler notifies both root parties");
+  assert(
+    new Set((collaborationEvents || []).map((event) => event.payload?.collaboration_id)).size === 1,
+    "collaboration_required events share one collaboration_id"
+  );
+  assert(
+    (collaborationEvents || []).every((event) => event.payload?.shared_question),
+    "collaboration_required events include a shared question"
   );
 
   // ── Cleanup ──────────────────────────────────────────────────────

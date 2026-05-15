@@ -119,7 +119,7 @@ services:
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - GITHUB_REPO=${GITHUB_REPO:-dschirmer-shiftkey/komatik-yggdrasil}
+      - GITHUB_REPO=${GITHUB_REPO:-KomatikAI/cairn}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - BIFROST_URL=http://bifrost:8080
       - SEED_VIRTUAL_KEY=${SEED_VIRTUAL_KEY}
