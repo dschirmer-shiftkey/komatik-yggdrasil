@@ -1,4 +1,14 @@
-# Yggdrasil
+# Cairn
+
+> Cairn is the V4.1 canonical product name (renamed from **Yggdrasil**
+> during the 2026-05-19 brand cleanup). Live at `cairn.komatik.xyz`;
+> the legacy `yggdrasil.komatik.xyz` 301-redirects there. The Norse
+> mythology narrative below is the project's origin story — internal
+> Seed protocol references (see `AGENTS.md`) and the `yggdrasil_*`
+> Supabase tables stay on the old name per the V4.1 things-that-didn't-rename
+> policy.
+
+---
 
 > *In Norse cosmology, Yggdrasil is the immense ash tree at the center of
 > everything. Its roots reach into three wells of wisdom. Its branches hold
