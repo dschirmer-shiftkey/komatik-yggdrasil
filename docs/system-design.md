@@ -488,9 +488,9 @@ This serves as the template for all other roots, categories, and seeds.
 - [x] Category container spec (housing)
 - [x] Public suggestion queue mechanism (designed: §13 Public Signal Pipeline)
 - [x] Apex tier (Yggdrasil HQ) container spec (see `apex/`)
-- [ ] Apex tier implementation (event-processor PROCESSOR_TYPE=apex, migrations, boot)
-- [ ] Collaboration Protocol event types and state schema
-- [ ] Contention Map data model and publishing cadence
+- [x] Apex tier wiring (migration 005, `PROCESSOR_TYPE=apex`, signal-aggregator, compose override; live boot pending VPS/API keys)
+- [x] Collaboration Protocol event types and handler fan-out (`collaboration_required`, `collaboration_position_published`)
+- [x] Contention Map data model (`contested_tension` findings + `contention_map` view; apex synthesis cadence still LLM-driven)
 - [x] Public Signal intake surface (GitHub issue template for v1) — see `.github/ISSUE_TEMPLATE/public-signal.yml`
 - [x] Sync §1 Hierarchy and §2 Container Tiers to include Apex tier
 - [x] Sync §4 Cost Model to include Apex tier

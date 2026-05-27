@@ -17,7 +17,7 @@
  *
  * Environment:
  *   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  — world tree DB
- *   GITHUB_REPO                              — owner/repo (e.g. dschirmer-shiftkey/komatik-yggdrasil)
+ *   GITHUB_REPO                              — owner/repo (e.g. KomatikAI/cairn)
  *   GITHUB_TOKEN                             — optional, raises rate limits
  *   BIFROST_URL                              — default http://bifrost:8080
  *   SEED_VIRTUAL_KEY                         — Bifrost auth

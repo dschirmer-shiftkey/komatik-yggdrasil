@@ -141,6 +141,9 @@ export async function publishFinding(supabase, {
   agentRole = null,
   tokensUsed = 0,
   costUsd = 0,
+  kind = null,
+  payload = {},
+  spansRoots = [],
 }) {
   const { data, error } = await supabase
     .from("findings")
@@ -162,6 +165,9 @@ export async function publishFinding(supabase, {
       agent_role: agentRole,
       tokens_used: tokensUsed,
       cost_usd: costUsd,
+      kind,
+      payload,
+      spans_roots: spansRoots,
     })
     .select("id")
     .single();
@@ -173,6 +179,36 @@ export async function publishFinding(supabase, {
 
   console.log(`[supabase] Published finding: ${data.id} — "${title}"`);
   return data;
+}
+
+
+/**
+ * Query routed public signals and collaboration requirements for this tier.
+ * These are durable knowledge_events emitted by apex and consumed by the
+ * target tier's next synthesis/mission cycle.
+ */
+export async function queryRoutedWork(supabase, {
+  targetType,
+  targetId,
+  limit = 20,
+}) {
+  if (!targetType || !targetId) return [];
+
+  const { data, error } = await supabase
+    .from("knowledge_events")
+    .select("id, event_type, source_type, source_id, target_type, target_id, category_id, payload, processed, created_at")
+    .eq("target_type", targetType)
+    .eq("target_id", targetId)
+    .in("event_type", ["signal_routed", "collaboration_required"])
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error(`[supabase] Failed to query routed work:`, error.message);
+    throw error;
+  }
+
+  return data || [];
 }
 
 /**

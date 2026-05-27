@@ -75,10 +75,10 @@ komatik-yggdrasil/
 
 ## GitHub
 
-- **Repo**: [dschirmer-shiftkey/komatik-yggdrasil](https://github.com/dschirmer-shiftkey/komatik-yggdrasil)
-- **Main branch**: `main` — all infrastructure work merged (PRs #1–#4)
-- **CI**: `.github/workflows/validate.yml` — structure validation, Docker builds, syntax checks (recursive), unit tests
-- **Domain**: `yggdrasil.komatik.xyz` (pending DNS)
+- **Repo**: [KomatikAI/cairn](https://github.com/KomatikAI/cairn)
+- **Branches**: `dev` (active integration), `main` (promotion target for site deploy)
+- **CI**: `.github/workflows/validate.yml` — structure validation, Docker builds, syntax checks, unit tests; Trailhead release gate on PRs
+- **Domain**: [cairn.komatik.xyz](https://cairn.komatik.xyz) (legacy `yggdrasil.komatik.xyz` redirects)
 
 ## Running Locally
 

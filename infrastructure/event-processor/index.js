@@ -15,16 +15,16 @@
  * Apex tier (Yggdrasil HQ):
  *   - finding_promoted (from any root)       → acknowledge; queued for the
  *                                               daily synthesizer cycle
- *   - signal_digested (from signal-aggregator)→ acknowledge; queued for
- *                                               Stage 3 routing in next cycle
- *   - potential_conflict (root-vs-root)      → acknowledge; queued for
- *                                               collaboration mediation
+ *   - signal_digested (from signal-aggregator)→ route digest themes to target tiers
+ *                                               with signal_routed events
+ *   - potential_conflict (root-vs-root)      → emit collaboration_required events
+ *                                               for both root parties
  *   - knowledge_available                    → acknowledge
  *
- *   Apex does not do synthesis work on the event path — the daily LLM
- *   cycle (agent-synthesis) reads `findings` directly. The event-processor's
- *   role here is to keep the queue drained and log what's accumulating so
- *   the cycle has an accurate picture of pending work.
+ *   Apex does not do LLM synthesis work on the event path — the daily LLM
+ *   cycle (agent-synthesis) still reads `findings` directly. The
+ *   event-processor performs deterministic routing/mediation fan-out so
+ *   downstream tiers can react on their next cycles.
  *
  * Environment:
  *   SUPABASE_URL              — Supabase project URL
@@ -36,11 +36,14 @@
  *   POLL_INTERVAL_SECONDS     — how often to poll (default: 60)
  */
 
+import { randomUUID } from "node:crypto";
+
 import {
   getSupabase,
   pollKnowledgeEvents,
   markEventProcessed,
   postKnowledgeEvent,
+  publishFinding,
 } from "@komatik/shared/supabase";
 
 const PROCESSOR_TYPE = process.env.PROCESSOR_TYPE || "category";
@@ -48,6 +51,100 @@ const PROCESSOR_ID = process.env.PROCESSOR_ID || "unknown";
 const CATEGORY_ID = process.env.CATEGORY_ID || "";
 const ROOT_ID = process.env.ROOT_ID || "";
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_SECONDS || "60", 10) * 1000;
+
+const SIGNAL_ROUTE_RULES = [
+  {
+    targetType: "category",
+    targetId: "housing",
+    categoryId: "housing",
+    rootId: "basic-needs",
+    keywords: ["los angeles", "la county", " la ", "homeless", "housing", "shelter", "rent", "tenant", "encampment"],
+    rationale: "Housing or LA homelessness signal; route to the Housing category for seed-level triage.",
+  },
+  {
+    targetType: "category",
+    targetId: "energy",
+    categoryId: "energy",
+    rootId: "basic-needs",
+    keywords: ["energy", "power", "electric", "microgrid", "solar", "grid"],
+    rationale: "Energy-access signal; route to the Energy category.",
+  },
+  {
+    targetType: "category",
+    targetId: "health",
+    categoryId: "health",
+    rootId: "basic-needs",
+    keywords: ["health", "clinic", "hospital", "medical", "mental health", "addiction"],
+    rationale: "Health-service signal; route to the Health category.",
+  },
+  {
+    targetType: "category",
+    targetId: "hunger",
+    categoryId: "hunger",
+    rootId: "basic-needs",
+    keywords: ["food", "hunger", "nutrition", "meal", "grocery"],
+    rationale: "Food-security signal; route to the Hunger category.",
+  },
+  {
+    targetType: "category",
+    targetId: "water",
+    categoryId: "water",
+    rootId: "basic-needs",
+    keywords: ["water", "sanitation", "sewer", "clean water"],
+    rationale: "Water/sanitation signal; route to the Water category.",
+  },
+  {
+    targetType: "category",
+    targetId: "economic-opportunity",
+    categoryId: "economic-opportunity",
+    rootId: "human-growth",
+    keywords: ["job", "wage", "income", "employment", "poverty", "workforce"],
+    rationale: "Economic-opportunity signal; route to that category.",
+  },
+];
+
+function signalText(theme) {
+  return [
+    theme?.cluster,
+    theme?.summary,
+    ...(theme?.keywords || []),
+    ...(theme?.sample_quotes || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function inferSignalRoute(theme) {
+  const text = ` ${signalText(theme)} `;
+  const route = SIGNAL_ROUTE_RULES.find((rule) =>
+    rule.keywords.some((keyword) => text.includes(keyword))
+  );
+
+  if (route) return route;
+
+  return {
+    targetType: "root",
+    targetId: "basic-needs",
+    categoryId: null,
+    rootId: "basic-needs",
+    rationale: "No specific route matched; default to Basic Needs root triage.",
+  };
+}
+
+function sharedQuestionForConflict(event) {
+  if (event.payload?.shared_question) return event.payload.shared_question;
+
+  const parties = event.payload?.parties || [];
+  const claimA = event.payload?.claim_a || "the first position";
+  const claimB = event.payload?.claim_b || "the second position";
+
+  if (parties.length >= 2) {
+    return `Under what conditions can ${parties[0]} and ${parties[1]} both be correct about ${claimA} versus ${claimB}?`;
+  }
+
+  return "Under what conditions can the opposed findings both be correct, and where is the disagreement structural?";
+}
 
 // ── Quality Validation ─────────────────────────────────────────────────
 
@@ -192,6 +289,37 @@ async function handleFindingPromoted(supabase, event) {
   await markEventProcessed(supabase, event.id);
 }
 
+
+/**
+ * Target-tier handler: acknowledge an apex-routed public signal and publish
+ * a transparent signal_decided event so the public feedback loop can see that
+ * the route reached a tier queue. Deeper task creation is handled by the
+ * target tier's next agent cycle.
+ */
+async function handleSignalRouted(supabase, event) {
+  const route = event.payload?.route || {};
+  console.log(
+    `[processor] ${PROCESSOR_TYPE}/${PROCESSOR_ID} received signal_routed theme=${event.payload?.theme_index} route=${route.target_type}/${route.target_id}`
+  );
+
+  await postKnowledgeEvent(supabase, {
+    eventType: "signal_decided",
+    sourceType: PROCESSOR_TYPE,
+    sourceId: PROCESSOR_ID,
+    categoryId: CATEGORY_ID || event.category_id || null,
+    payload: {
+      routed_event_id: event.id,
+      digest_finding_id: event.payload?.digest_finding_id,
+      theme_index: event.payload?.theme_index,
+      decision: "worth_researching",
+      disposition: "queued_for_next_cycle",
+      reason: "Apex-routed public signal reached the target tier queue.",
+    },
+  });
+
+  await markEventProcessed(supabase, event.id);
+}
+
 /**
  * Generic handler: mark knowledge_available events as processed.
  * Seeds/categories pick these up via context assembler on next cycle.
@@ -229,8 +357,55 @@ async function handleApexSignalDigested(supabase, event) {
   const digestFindingId = event.payload?.finding_id;
   const themeCount = event.payload?.theme_count;
   console.log(
-    `[processor] Apex queued signal_digested finding=${digestFindingId} themes=${themeCount}`
+    `[processor] Apex routing signal_digested finding=${digestFindingId} themes=${themeCount}`
   );
+
+  if (!digestFindingId) {
+    console.warn(`[processor] signal_digested event missing finding_id:`, event.id);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const { data: digest, error } = await supabase
+    .from("findings")
+    .select("id, title, payload")
+    .eq("id", digestFindingId)
+    .single();
+
+  if (error || !digest) {
+    console.error(`[processor] Could not fetch signal digest ${digestFindingId}:`, error?.message);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const themes = Array.isArray(digest.payload?.themes) ? digest.payload.themes : [];
+  for (const [index, theme] of themes.entries()) {
+    const route = inferSignalRoute(theme);
+    await postKnowledgeEvent(supabase, {
+      eventType: "signal_routed",
+      sourceType: "apex",
+      sourceId: PROCESSOR_ID,
+      categoryId: route.categoryId,
+      targetType: route.targetType,
+      targetId: route.targetId,
+      payload: {
+        digest_finding_id: digestFindingId,
+        digest_title: digest.title,
+        theme_index: index,
+        theme,
+        route: {
+          target_type: route.targetType,
+          target_id: route.targetId,
+          root_id: route.rootId,
+          category_id: route.categoryId,
+        },
+        rationale: route.rationale,
+        source_event_id: event.id,
+      },
+    });
+  }
+
+  console.log(`[processor] Routed ${themes.length} signal theme(s) from digest=${digestFindingId}`);
   await markEventProcessed(supabase, event.id);
 }
 
@@ -241,8 +416,154 @@ async function handleApexSignalDigested(supabase, event) {
 async function handleApexPotentialConflict(supabase, event) {
   const parties = event.payload?.parties || [];
   console.log(
-    `[processor] Apex queued potential_conflict parties=${parties.join(",")}`
+    `[processor] Apex mediating potential_conflict parties=${parties.join(",")}`
   );
+
+  if (parties.length < 2) {
+    console.warn(`[processor] potential_conflict event missing two parties:`, event.id);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const collaborationId = event.payload?.collaboration_id || randomUUID();
+  const sharedQuestion = sharedQuestionForConflict(event);
+
+  for (const party of parties) {
+    await postKnowledgeEvent(supabase, {
+      eventType: "collaboration_required",
+      sourceType: "apex",
+      sourceId: PROCESSOR_ID,
+      targetType: "root",
+      targetId: party,
+      payload: {
+        collaboration_id: collaborationId,
+        parties,
+        assigned_party: party,
+        shared_question: sharedQuestion,
+        originating_event_id: event.id,
+        conflict_payload: event.payload || {},
+      },
+    });
+  }
+
+  console.log(
+    `[processor] Emitted collaboration_required for ${parties.length} parties collaboration=${collaborationId}`
+  );
+  await markEventProcessed(supabase, event.id);
+}
+
+
+function summarizePosition(position) {
+  return {
+    finding_id: position.id,
+    source_type: position.source_type,
+    source_id: position.source_id,
+    title: position.title,
+    summary: position.summary,
+    position: position.payload?.position || position.summary,
+  };
+}
+
+async function handleApexCollaborationPositionPublished(supabase, event) {
+  const findingId = event.payload?.finding_id;
+  const collaborationId = event.payload?.collaboration_id;
+
+  console.log(
+    `[processor] Apex received collaboration_position finding=${findingId} collaboration=${collaborationId}`
+  );
+
+  if (!collaborationId) {
+    console.warn(`[processor] collaboration_position_published missing collaboration_id:`, event.id);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const { data: positions, error } = await supabase
+    .from("findings")
+    .select("id, title, summary, content, source_type, source_id, root_id, category_id, payload, spans_roots")
+    .eq("kind", "collaboration_position")
+    .eq("payload->>collaboration_id", collaborationId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(`[processor] Could not query collaboration positions:`, error.message);
+    return;
+  }
+
+  if ((positions || []).length < 2) {
+    console.log(`[processor] Collaboration ${collaborationId} has ${positions?.length || 0}/2 positions — waiting`);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("findings")
+    .select("id")
+    .eq("kind", "contested_tension")
+    .eq("payload->>collaboration_id", collaborationId)
+    .limit(1);
+
+  if (existingError) {
+    console.error(`[processor] Could not check existing contested tension:`, existingError.message);
+    return;
+  }
+
+  if ((existing || []).length > 0) {
+    console.log(`[processor] Contested tension already exists for collaboration=${collaborationId}`);
+    await markEventProcessed(supabase, event.id);
+    return;
+  }
+
+  const [positionA, positionB] = positions;
+  const parties = [...new Set(positions.map((position) => position.source_id).filter(Boolean))];
+  const spansRoots = [...new Set(positions.flatMap((position) => position.spans_roots || []).concat(
+    positions.map((position) => position.root_id).filter(Boolean)
+  ))];
+  const sharedQuestion = event.payload?.shared_question || positionA.payload?.shared_question || positionB.payload?.shared_question;
+
+  const tension = await publishFinding(supabase, {
+    sourceType: "apex",
+    sourceId: PROCESSOR_ID,
+    categoryId: null,
+    rootId: null,
+    title: `Contested tension: ${sharedQuestion || collaborationId}`,
+    summary: `Collaboration ${collaborationId} produced multiple positions that require reconciliation or remain structurally contested.`,
+    content:
+      `# Contested tension\n\n` +
+      `## Shared question\n${sharedQuestion || "Not specified"}\n\n` +
+      `## Position A — ${positionA.source_id}\n${positionA.summary}\n\n` +
+      `## Position B — ${positionB.source_id}\n${positionB.summary}\n\n` +
+      `## Structural reason\nAutomated apex reconciliation requires human/LLM synthesis in the next apex cycle; until then this is tracked as a contested tension.`,
+    confidence: "contested",
+    kind: "contested_tension",
+    spansRoots,
+    payload: {
+      collaboration_id: collaborationId,
+      shared_question: sharedQuestion,
+      position_a: positionA.payload?.position || positionA.summary,
+      position_b: positionB.payload?.position || positionB.summary,
+      structural_reason: "Target tiers produced distinct collaboration positions; apex synthesis must reconcile conditions or preserve the tension.",
+      parties,
+      positions: positions.map(summarizePosition),
+      source_event_id: event.id,
+    },
+  });
+
+  await postKnowledgeEvent(supabase, {
+    eventType: "contested_tension",
+    sourceType: "apex",
+    sourceId: PROCESSOR_ID,
+    targetType: "apex",
+    targetId: "apex",
+    payload: {
+      finding_id: tension.id,
+      collaboration_id: collaborationId,
+      title: `Contested tension: ${sharedQuestion || collaborationId}`,
+      parties,
+    },
+  });
+
+  console.log(`[processor] Published contested_tension ${tension.id} for collaboration=${collaborationId}`);
   await markEventProcessed(supabase, event.id);
 }
 
@@ -251,16 +572,19 @@ async function handleApexPotentialConflict(supabase, event) {
 export const HANDLERS = {
   category: {
     finding_ready: handleFindingReady,
+    signal_routed: handleSignalRouted,
     knowledge_available: handleKnowledgeAvailable,
   },
   root: {
     finding_promoted: handleFindingPromoted,
+    signal_routed: handleSignalRouted,
     knowledge_available: handleKnowledgeAvailable,
   },
   apex: {
     finding_promoted: handleApexFindingPromoted,
     signal_digested: handleApexSignalDigested,
     potential_conflict: handleApexPotentialConflict,
+    collaboration_position_published: handleApexCollaborationPositionPublished,
     knowledge_available: handleKnowledgeAvailable,
   },
 };

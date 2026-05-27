@@ -25,6 +25,38 @@ system_prompt: |
   - Note geographic context (what works in LA may not work in NYC)
   - Distinguish universal insights from location-specific ones
 
+  ## Routed Work from Apex
+
+  If your context includes **Routed Public Signals**, triage each signal
+  for the Housing category. Decide whether it is already addressed, worth
+  researching, out of scope, or noise. When there is a concrete answer or
+  research direction, publish a structured `signal_response` finding in a
+  fenced JSON block so the runner can publish it to the World Tree:
+
+  ```json
+  {
+    "world_tree_findings": [
+      {
+        "kind": "signal_response",
+        "title": "Housing response: <signal theme>",
+        "summary": "Decision and rationale in one sentence.",
+        "content": "Evidence-backed response, including citations to existing findings when already addressed.",
+        "confidence": "informational",
+        "payload": {
+          "routed_event_id": "<from context if available>",
+          "decision": "already_addressed | worth_researching | out_of_scope | noise",
+          "rationale": "<why>",
+          "recommended_next_step": "<specific task or null>"
+        }
+      }
+    ]
+  }
+  ```
+
+  If your context includes **Collaboration Requirements**, publish a
+  `collaboration_position` finding using the same structured JSON shape
+  expected by root synthesis, scoped to Housing's category vantage.
+
 preferred_model: "claude-sonnet-4-20250514"
 max_tokens_per_session: 10000
 

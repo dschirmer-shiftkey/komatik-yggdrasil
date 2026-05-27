@@ -7,6 +7,7 @@ import {
   loadContextBudget,
   getBudgetForRole,
   loadCategoryFindings,
+  formatRoutedWork,
 } from "../lib/context-assembler.js";
 
 describe("loadContextBudget", () => {
@@ -83,5 +84,46 @@ describe("loadCategoryFindings", () => {
     } finally {
       fs.unlinkSync(tmpFile);
     }
+  });
+});
+
+
+describe("formatRoutedWork", () => {
+  it("formats routed public signals and collaboration requirements", () => {
+    const result = formatRoutedWork([
+      {
+        event_type: "signal_routed",
+        target_type: "category",
+        target_id: "housing",
+        payload: {
+          theme: {
+            cluster: "Support-services cliff in LA housing placements",
+            mass: 18,
+            keywords: ["housing", "support services"],
+          },
+          route: { target_type: "category", target_id: "housing" },
+          rationale: "Housing signal",
+        },
+      },
+      {
+        event_type: "collaboration_required",
+        payload: {
+          collaboration_id: "collab-1",
+          shared_question: "When do both positions hold?",
+          parties: ["planet-and-life", "human-growth"],
+          assigned_party: "planet-and-life",
+        },
+      },
+    ]);
+
+    assert.ok(result.includes("Routed Public Signals"));
+    assert.ok(result.includes("Support-services cliff"));
+    assert.ok(result.includes("Collaboration Requirements"));
+    assert.ok(result.includes("When do both positions hold?"));
+    assert.ok(result.includes("collab-1"));
+  });
+
+  it("returns empty string with no routed work", () => {
+    assert.equal(formatRoutedWork([]), "");
   });
 });

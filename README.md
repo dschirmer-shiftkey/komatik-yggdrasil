@@ -1,4 +1,14 @@
-# Yggdrasil
+# Cairn
+
+> Cairn is the V4.1 canonical product name (renamed from **Yggdrasil**
+> during the 2026-05-19 brand cleanup). Live at `cairn.komatik.xyz`;
+> the legacy `yggdrasil.komatik.xyz` 301-redirects there. The Norse
+> mythology narrative below is the project's origin story — internal
+> Seed protocol references (see `AGENTS.md`) and the `yggdrasil_*`
+> Supabase tables stay on the old name per the V4.1 things-that-didn't-rename
+> policy.
+
+---
 
 > *In Norse cosmology, Yggdrasil is the immense ash tree at the center of
 > everything. Its roots reach into three wells of wisdom. Its branches hold
@@ -276,8 +286,8 @@ flows through Supabase — the shared well of knowledge at the base of the tree.
 
 ```bash
 # Clone
-git clone https://github.com/dschirmer-shiftkey/komatik-yggdrasil.git
-cd komatik-yggdrasil
+git clone https://github.com/KomatikAI/cairn.git
+cd cairn
 
 # Configure
 cp infrastructure/.env.example infrastructure/.env
@@ -303,10 +313,29 @@ cd infrastructure/gateway && npm ci && npm test   # RBAC, tool registry
 SUPABASE_URL=https://xxx.supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=eyJ... \
 node infrastructure/scripts/test-vertical-slice.js
+
+# Offline smoke test for local/CI validation without Supabase credentials
+cd infrastructure/scripts && npm run test:vertical-slice:dry
 ```
 
 Exercises the full pipeline: seed publish, category validate, promote, root
-acknowledge, context assembly read-back.
+acknowledge, context assembly read-back. The dry-run mode uses an in-memory
+Supabase adapter so handler and query wiring can be validated without touching
+the shared project.
+
+### Apex Smoke Test
+
+```bash
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=eyJ... \
+cd infrastructure/scripts && npm run test:apex-cycle
+
+# Offline smoke test for apex schema/event wiring
+cd infrastructure/scripts && npm run test:apex-cycle:dry
+```
+
+Exercises apex finding shapes, the Contention Map view, Public Signal routing,
+and Collaboration Protocol event emission.
 
 ---
 
@@ -326,7 +355,7 @@ grows, so does the budget. Every token is tracked in each seed's `TOKENS.md`.
 ## Repository Structure
 
 ```
-komatik-yggdrasil/
+cairn/
 ├── infrastructure/
 │   ├── compose.yaml              # Base Docker Compose template
 │   ├── .env.example              # Environment variables
@@ -371,6 +400,6 @@ Yggdrasil runs on the same agent infrastructure that powers Komatik's
 commercial platform — the same orchestration engine, the same operational
 framework. The technology is identical; only the mission differs.
 
-- **Website**: [yggdrasil.komatik.xyz](https://yggdrasil.komatik.xyz)
+- **Website**: [cairn.komatik.xyz](https://cairn.komatik.xyz) (legacy [yggdrasil.komatik.xyz](https://yggdrasil.komatik.xyz) redirects)
 - **Parent**: [komatik.ai](https://komatik.ai)
 - **Agent Infrastructure**: [OpenClaw](https://github.com/dschirmer-shiftkey/komatik-agents)

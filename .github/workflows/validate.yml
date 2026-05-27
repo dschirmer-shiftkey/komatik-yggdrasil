@@ -11,7 +11,7 @@ jobs:
     name: Validate Seed Artifacts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Check required root files
         run: |
@@ -103,7 +103,7 @@ jobs:
     name: Verify Docker Builds
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Build all service images
         run: |
@@ -117,9 +117,9 @@ jobs:
       matrix:
         service: [agent, gateway, publisher, scheduler]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
 

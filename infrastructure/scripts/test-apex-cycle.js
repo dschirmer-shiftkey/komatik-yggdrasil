@@ -27,24 +27,35 @@
  *   SUPABASE_SERVICE_ROLE_KEY=eyJ... \
  *   npm run test:apex-cycle
  *
- *   (npm script passes --preserve-symlinks so the workspace-linked
+ * Offline smoke test:
+ *   npm run test:apex-cycle:dry
+ *
+ *   (npm scripts pass --preserve-symlinks so the workspace-linked
  *   @komatik/event-processor resolves its @komatik/shared dep.)
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { HANDLERS } from "@komatik/event-processor";
+import { createDryRunSupabase } from "./lib/dry-run-supabase.js";
 
+const DRY_RUN = process.argv.includes("--dry-run") || process.env.APEX_CYCLE_DRY_RUN === "1";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars");
+if (!DRY_RUN && (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY)) {
+  console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars, or pass --dry-run");
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+process.env.PROCESSOR_TYPE ??= "apex";
+process.env.PROCESSOR_ID ??= "apex";
+
+const { HANDLERS } = await import("@komatik/event-processor");
+
+const supabase = DRY_RUN
+  ? createDryRunSupabase()
+  : createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
 const TEST_TAG = "apex-e2e-" + Date.now();
 let passed = 0;
@@ -65,13 +76,16 @@ async function cleanup() {
   console.log("\n[cleanup] Removing test rows...");
   // Delete events first (FK to findings via payload is loose; delete both by tag)
   await supabase.from("knowledge_events").delete().ilike("payload->>tag", `${TEST_TAG}%`);
+  await supabase.from("knowledge_events").delete().ilike("payload->>collaboration_id", `${TEST_TAG}%`);
   await supabase.from("findings").delete().ilike("title", `[${TEST_TAG}]%`);
+  await supabase.from("findings").delete().ilike("payload->>collaboration_id", `${TEST_TAG}%`);
   // Any orphan events targeting apex with our tag
   await supabase.from("knowledge_events").delete().eq("source_id", TEST_TAG);
 }
 
 async function main() {
-  console.log(`\n=== Apex Cycle Smoke Test (${TEST_TAG}) ===\n`);
+  console.log(`\n=== Apex Cycle Smoke Test (${TEST_TAG}) ===`);
+  console.log(`Supabase: ${DRY_RUN ? "dry-run in-memory adapter" : SUPABASE_URL}\n`);
 
   // ── Step 1: Schema — apex findings ────────────────────────────────
   console.log("Step 1: Write apex-tier findings (cross_root_pattern, mission_drift_flag)");
@@ -230,6 +244,7 @@ async function main() {
   ];
 
   const eventIds = [];
+  let potentialConflictEventId = null;
   for (const { event_type, payload } of eventTypes) {
     const { data, error } = await supabase
       .from("knowledge_events")
@@ -244,7 +259,10 @@ async function main() {
       .select("id")
       .single();
     assert(!error, `post ${event_type} event (${error?.message || "ok"})`);
-    if (data?.id) eventIds.push({ id: data.id, event_type });
+    if (data?.id) {
+      eventIds.push({ id: data.id, event_type });
+      if (event_type === "potential_conflict") potentialConflictEventId = data.id;
+    }
   }
 
   // ── Step 5: Poll + handler invocation ─────────────────────────────
@@ -286,6 +304,130 @@ async function main() {
     (stillUnprocessed?.length || 0) === 0,
     "all apex test events marked processed by handlers"
   );
+
+  const { data: routedSignals, error: routedError } = await supabase
+    .from("knowledge_events")
+    .select("*")
+    .eq("event_type", "signal_routed")
+    .eq("source_type", "apex")
+    .eq("payload->>digest_finding_id", digestFinding?.id);
+
+  assert(!routedError, `query signal_routed events (${routedError?.message || "ok"})`);
+  assert((routedSignals?.length || 0) === 2, "signal_digested handler routes each digest theme");
+  assert(
+    routedSignals?.some((event) => event.target_type === "category" && event.target_id === "housing"),
+    "housing/LA signal routes to the housing category"
+  );
+  assert(
+    routedSignals?.some((event) => event.target_type === "category" && event.target_id === "health"),
+    "health signal routes to the health category"
+  );
+
+  const { data: collaborationEvents, error: collabError } = await supabase
+    .from("knowledge_events")
+    .select("*")
+    .eq("event_type", "collaboration_required")
+    .eq("source_type", "apex")
+    .eq("payload->>originating_event_id", potentialConflictEventId);
+
+  assert(!collabError, `query collaboration_required events (${collabError?.message || "ok"})`);
+  assert((collaborationEvents?.length || 0) === 2, "potential_conflict handler notifies both root parties");
+  assert(
+    new Set((collaborationEvents || []).map((event) => event.payload?.collaboration_id)).size === 1,
+    "collaboration_required events share one collaboration_id"
+  );
+  assert(
+    (collaborationEvents || []).every((event) => event.payload?.shared_question),
+    "collaboration_required events include a shared question"
+  );
+
+
+  // ── Step 6: Collaboration positions → contested tension ────────────
+  console.log("\nStep 6: Publish collaboration positions and let apex create contested_tension");
+
+  const collaborationId = `${TEST_TAG}-collab`;
+  const sharedQuestion = "When should decarbonized growth or degrowth be preferred?";
+  const positionRows = [
+    {
+      source_type: "root",
+      source_id: "planet-and-life",
+      root_id: "planet-and-life",
+      category_id: null,
+      title: `[${TEST_TAG}] Planet position on growth tension`,
+      summary: "Degrowth is preferred where ecological limits are already breached.",
+      content: "Planet-and-life position: ecological boundaries set hard constraints.",
+      confidence: "preliminary",
+      spans_roots: ["planet-and-life", "human-growth"],
+      kind: "collaboration_position",
+      payload: {
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+        position: "Degrowth is preferred where ecological limits are already breached.",
+      },
+    },
+    {
+      source_type: "root",
+      source_id: "human-growth",
+      root_id: "human-growth",
+      category_id: null,
+      title: `[${TEST_TAG}] Human growth position on growth tension`,
+      summary: "Decarbonized growth is preferred where poverty reduction depends on expanding services.",
+      content: "Human-growth position: development gains remain necessary in low-access contexts.",
+      confidence: "preliminary",
+      spans_roots: ["planet-and-life", "human-growth"],
+      kind: "collaboration_position",
+      payload: {
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+        position: "Decarbonized growth is preferred where poverty reduction depends on expanding services.",
+      },
+    },
+  ];
+
+  const positionFindingIds = [];
+  for (const row of positionRows) {
+    const { data, error } = await supabase
+      .from("findings")
+      .insert(row)
+      .select("id")
+      .single();
+    assert(!error, `insert collaboration_position (${error?.message || "ok"})`);
+    if (data?.id) positionFindingIds.push(data.id);
+  }
+
+  const { data: positionEvent, error: positionEventError } = await supabase
+    .from("knowledge_events")
+    .insert({
+      event_type: "collaboration_position_published",
+      source_type: "root",
+      source_id: TEST_TAG,
+      target_type: "apex",
+      target_id: "apex",
+      payload: {
+        tag: TEST_TAG,
+        finding_id: positionFindingIds[1],
+        collaboration_id: collaborationId,
+        shared_question: sharedQuestion,
+      },
+    })
+    .select("*")
+    .single();
+
+  assert(!positionEventError, `post collaboration_position_published (${positionEventError?.message || "ok"})`);
+  assert(!!HANDLERS.apex.collaboration_position_published, "HANDLERS.apex has collaboration_position_published handler");
+  await HANDLERS.apex.collaboration_position_published(supabase, positionEvent);
+
+  const { data: tensions, error: tensionQueryError } = await supabase
+    .from("findings")
+    .select("id, kind, confidence, payload")
+    .eq("kind", "contested_tension")
+    .eq("payload->>collaboration_id", collaborationId);
+
+  assert(!tensionQueryError, `query generated contested_tension (${tensionQueryError?.message || "ok"})`);
+  assert((tensions?.length || 0) === 1, "apex creates one contested_tension from paired positions");
+  assert(tensions?.[0]?.confidence === "contested", "generated tension is marked contested");
+  assert(tensions?.[0]?.payload?.positions?.length === 2, "generated tension links both position findings");
+
 
   // ── Cleanup ──────────────────────────────────────────────────────
   await cleanup();

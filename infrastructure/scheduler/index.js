@@ -16,9 +16,12 @@
  * Environment:
  *   GATEWAY_URL              — gateway HTTP endpoint
  *   CYCLE_INTERVAL_MINUTES   — minutes between research cycles (default: 60)
+ *   CYCLE_STEPS              — comma-separated agent roles for this tier
+ *                              (default: research,analysis,prototype,documentation,mission,community)
  *   DATABASE_URL             — PostgreSQL connection string
  */
 
+import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
 
 const GATEWAY_URL = process.env.GATEWAY_URL || "http://gateway:18789";
@@ -29,14 +32,32 @@ const MAX_WORKFLOW_FAILURES = 5;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-const CYCLE_STEPS = [
-  { agent_id: "research",      task: "Discover new sources, datasets, and prior art relevant to the mission. Synthesize into structured summaries." },
-  { agent_id: "analysis",      task: "Model the research findings. Identify patterns, quantify impact, rank approaches by feasibility." },
-  { agent_id: "prototype",     task: "Build proof-of-concepts from the top-ranked analysis recommendations." },
-  { agent_id: "documentation", task: "Structure all outputs for public readability. Update FINDINGS.md with this cycle's discoveries." },
-  { agent_id: "mission",       task: "Review all cycle outputs against MISSION.md. Approve for publication or return with feedback. You MUST include a JSON block with {\"approved\": true} or {\"approved\": false, \"reason\": \"...\"} in your response." },
-  { agent_id: "community",     task: "Triage any external contributions received since last cycle. Route quality inputs to appropriate agents." },
-];
+const DEFAULT_CYCLE_ROLES = ["research", "analysis", "prototype", "documentation", "mission", "community"];
+
+const CYCLE_TASKS_BY_ROLE = {
+  research: "Discover new sources, datasets, and prior art relevant to the mission. Synthesize into structured summaries.",
+  analysis: "Model the research findings. Identify patterns, quantify impact, rank approaches by feasibility.",
+  prototype: "Build proof-of-concepts from the top-ranked analysis recommendations.",
+  documentation: "Structure all outputs for public readability. Update FINDINGS.md with this cycle's discoveries.",
+  community: "Triage any external contributions received since last cycle. Route quality inputs to appropriate agents.",
+  synthesis: "Synthesize validated findings, routed signals, and collaboration requirements for this tier. Publish cross-scope patterns, route work downward where appropriate, and preserve citations.",
+  mission: `Review all cycle outputs against MISSION.md. Approve for publication or return with feedback. You MUST include a JSON block with {"approved": true} or {"approved": false, "reason": "..."} in your response.`,
+};
+
+export function parseCycleSteps(value = process.env.CYCLE_STEPS) {
+  const roles = (value || DEFAULT_CYCLE_ROLES.join(","))
+    .split(",")
+    .map((role) => role.trim().toLowerCase())
+    .filter(Boolean);
+
+  const selectedRoles = roles.length > 0 ? roles : DEFAULT_CYCLE_ROLES;
+  return selectedRoles.map((role) => ({
+    agent_id: role,
+    task: CYCLE_TASKS_BY_ROLE[role] || `Execute the ${role} step for this tier's mission.`,
+  }));
+}
+
+const CYCLE_STEPS = parseCycleSteps();
 
 // ── Gateway readiness ───────────────────────────────────────────────────
 
@@ -110,7 +131,10 @@ async function createCycleWorkflow() {
     stepIds.push(stepResult.rows[0].id);
   }
 
-  console.log(`[scheduler] Created workflow ${workflowId} — cycle #${cycleNumber}`);
+  console.log(
+    `[scheduler] Created workflow ${workflowId} — cycle #${cycleNumber} ` +
+      `(${CYCLE_STEPS.map((step) => step.agent_id).join(" → ")})`
+  );
   return workflowId;
 }
 
@@ -290,6 +314,7 @@ async function runCycle() {
 
 async function main() {
   console.log(`[scheduler] Starting with ${CYCLE_INTERVAL_MS / 60000}-minute cycle interval`);
+  console.log(`[scheduler] Cycle steps: ${CYCLE_STEPS.map((step) => step.agent_id).join(" → ")}`);
 
   await waitForGateway();
   console.log(`[scheduler] Gateway is healthy`);
@@ -305,7 +330,11 @@ async function main() {
   });
 }
 
-main().catch((err) => {
-  console.error("[scheduler] Fatal error:", err);
-  process.exit(1);
-});
+const isEntryPoint = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error("[scheduler] Fatal error:", err);
+    process.exit(1);
+  });
+}

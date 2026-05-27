@@ -233,6 +233,16 @@ function formatWorkflowSteps(steps) {
  * Query the shared Supabase world tree for findings from the category,
  * root, and geographic peers. This is the "read up before you work" step.
  */
+function getRoutedWorkTarget() {
+  const sourceType = process.env.SOURCE_TYPE;
+  const sourceId = process.env.SOURCE_ID;
+
+  if (sourceType && sourceId) return { targetType: sourceType, targetId: sourceId };
+  if (process.env.CATEGORY_ID) return { targetType: "category", targetId: process.env.CATEGORY_ID };
+  if (process.env.ROOT_ID) return { targetType: "root", targetId: process.env.ROOT_ID };
+  return null;
+}
+
 async function loadTreeKnowledge() {
   const mod = await getSupabaseModule();
   if (!mod) return "";
@@ -243,10 +253,10 @@ async function loadTreeKnowledge() {
   const categoryId = process.env.CATEGORY_ID;
   const rootId = process.env.ROOT_ID;
   const sourceId = process.env.SOURCE_ID;
+  const target = getRoutedWorkTarget();
 
   if (!categoryId || !rootId) {
-    console.warn("[context] CATEGORY_ID or ROOT_ID not set — skipping tree knowledge");
-    return "";
+    console.warn("[context] CATEGORY_ID or ROOT_ID not set — skipping tree findings");
   }
 
   // Parse geographic scope from seed config if available
@@ -260,18 +270,67 @@ async function loadTreeKnowledge() {
   } catch { /* non-fatal */ }
 
   try {
-    const results = await mod.queryTreeFindings(supabase, {
-      categoryId,
-      rootId,
-      geographicScope: geoScope,
-      excludeSourceId: sourceId,
-    });
+    const [findings, routedWork] = await Promise.all([
+      categoryId && rootId
+        ? mod.queryTreeFindings(supabase, {
+            categoryId,
+            rootId,
+            geographicScope: geoScope,
+            excludeSourceId: sourceId,
+          })
+        : Promise.resolve({ category: [], root: [], geographic: [], superseded: [] }),
+      target && mod.queryRoutedWork
+        ? mod.queryRoutedWork(supabase, target)
+        : Promise.resolve([]),
+    ]);
 
-    return formatTreeKnowledge(results);
+    return [formatRoutedWork(routedWork), formatTreeKnowledge(findings)]
+      .filter(Boolean)
+      .join("\n");
   } catch (err) {
     console.warn(`[context] Failed to load tree knowledge: ${err.message}`);
     return "";
   }
+}
+
+export function formatRoutedWork(events) {
+  if (!events || events.length === 0) return "";
+
+  const signalEvents = events.filter((event) => event.event_type === "signal_routed");
+  const collaborationEvents = events.filter((event) => event.event_type === "collaboration_required");
+  const sections = [];
+
+  if (signalEvents.length > 0) {
+    let md = "### Routed Public Signals\n\n";
+    md += "> Apex routed these public signal themes to this tier. Decide whether each is already addressed, worth researching, out of scope, or noise.\n\n";
+    for (const event of signalEvents) {
+      const theme = event.payload?.theme || {};
+      const route = event.payload?.route || {};
+      md += `- **${theme.cluster || "Untitled signal theme"}**`;
+      if (theme.mass !== undefined) md += ` (mass: ${theme.mass})`;
+      md += `\n`;
+      if (theme.keywords?.length) md += `  Keywords: ${theme.keywords.join(", ")}\n`;
+      if (event.payload?.rationale) md += `  Route rationale: ${event.payload.rationale}\n`;
+      md += `  Route: ${route.target_type || event.target_type}/${route.target_id || event.target_id}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (collaborationEvents.length > 0) {
+    let md = "### Collaboration Requirements\n\n";
+    md += "> Apex detected a conflict that needs collaborative work. Answer the shared question from this tier's vantage and cite evidence.\n\n";
+    for (const event of collaborationEvents) {
+      const payload = event.payload || {};
+      md += `- **${payload.shared_question || "Shared collaboration question"}**\n`;
+      if (payload.collaboration_id) md += `  Collaboration ID: ${payload.collaboration_id}\n`;
+      if (payload.parties?.length) md += `  Parties: ${payload.parties.join(", ")}\n`;
+      if (payload.assigned_party) md += `  Assigned party: ${payload.assigned_party}\n`;
+    }
+    sections.push(md);
+  }
+
+  if (sections.length === 0) return "";
+  return "## Routed Work from the World Tree\n\n" + sections.join("\n") + "\n";
 }
 
 function formatTreeKnowledge(results) {

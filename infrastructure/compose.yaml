@@ -90,6 +90,29 @@ services:
       - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
       - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
 
+  agent-synthesis:
+    <<: *agent-common
+    container_name: seed-agent-synthesis
+    environment:
+      - AGENT_ROLE=synthesis
+      - AGENT_ID=synthesis
+      - GATEWAY_URL=http://gateway:18789
+      - WORKSPACE_PATH=/workspace
+      - DATABASE_URL=postgresql://seedling:${POSTGRES_PASSWORD}@db:5432/seedling
+      - BIFROST_URL=http://bifrost:8080
+      - BIFROST_API_KEY=${SEED_VIRTUAL_KEY}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - CATEGORY_ID=${CATEGORY_ID}
+      - ROOT_ID=${ROOT_ID}
+      - SOURCE_ID=${SOURCE_ID}
+    volumes:
+      - workspace:/workspace
+      - output:/workspace/output
+      - mission:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+
   agent-research:
     <<: *agent-common
     container_name: seed-agent-research
