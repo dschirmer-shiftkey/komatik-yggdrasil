@@ -19,6 +19,10 @@ Bifrost, event-processor — against the live Yggdrasil Supabase, runs
 | Cycle cadence | **~1 year** (= effectively single-cycle) | [../compose.dry-run.yaml](../compose.dry-run.yaml) `CYCLE_INTERVAL_MINUTES` |
 | Required credentials | `OPENROUTER_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Bifrost → OpenRouter only |
 
+## VPS deploy (later)
+
+When moving off your laptop, start with [docs/deploy/README.md](../../../docs/deploy/README.md) (stubs and open decisions). Staging reuses this dry-run profile; production uses `compose.prod.yaml` (stub).
+
 ## Pre-flight
 
 From repo root, run the preflight script (checks Docker, `.env`, compose

@@ -1,0 +1,68 @@
+# Seed 002 Homelessness LA — PRODUCTION Compose Override (STUB)
+#
+# NOT enabled by default. Use only after filling docs/deploy/README.md open decisions.
+#
+# Boot (from repo root, when ready):
+#   docker compose --project-directory infrastructure \
+#     -f infrastructure/compose.yaml \
+#     -f seeds/002-homelessness-la/config/compose.override.yaml \
+#     -f seeds/002-homelessness-la/config/compose.prod.yaml up -d
+#
+# See docs/deploy/vps-production.md
+
+services:
+  # Publisher ON (contrast with compose.dry-run.yaml replicas: 0)
+  publisher:
+    environment:
+      - SEED_NAME=Homelessness LA
+      - SEED_DIR=seeds/002-homelessness-la
+    # TODO: GITHUB_REPO / GITHUB_BRANCH in infrastructure/.env
+
+  scheduler:
+    environment:
+      # TODO: set production cadence (minutes). Examples: 60, 360, 1440
+      - CYCLE_INTERVAL_MINUTES=${CYCLE_INTERVAL_MINUTES:-1440}
+
+  bifrost:
+    volumes:
+      # TODO: confirm budget cap and models in seeds/002-homelessness-la/config/bifrost.json
+      - ../seeds/002-homelessness-la/config/bifrost.json:/app/config.template.json:ro
+    environment: !override
+      - CONFIG_PATH=/app/data/config.json
+      - CONFIG_TEMPLATE_PATH=/app/config.template.json
+      # TODO: BIFROST_RESET_CONFIG=true only on first boot or key rotation
+      - BIFROST_RESET_CONFIG=${BIFROST_RESET_CONFIG:-false}
+      - BIFROST_BOOTSTRAP=false
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SEED_VIRTUAL_KEY=${SEED_VIRTUAL_KEY}
+      # TODO: add other providers if bifrost.json includes them
+
+  # Agent YAMLs: use compose.override.yaml (config/agents/*.yaml), NOT dry-run mounts.
+  # Do not add compose.dry-run.yaml when using this file.
+
+  # TODO: bind service ports to 127.0.0.1 on VPS (security). Example pattern:
+  # gateway:
+  #   ports:
+  #     - "127.0.0.1:${GATEWAY_PORT:-18789}:18789"
+  # bifrost:
+  #   ports:
+  #     - "127.0.0.1:${BIFROST_PORT:-8080}:8080"
+  # db:
+  #   ports: []   # remove public Postgres exposure
+
+  # TODO: housing category event-processor (validates finding_ready → promoted)
+  # Requires build context infrastructure/ (see event-processor/Dockerfile).
+  # event-processor:
+  #   build:
+  #     context: .
+  #     dockerfile: event-processor/Dockerfile
+  #   container_name: housing-event-processor
+  #   environment:
+  #     - SUPABASE_URL=${SUPABASE_URL}
+  #     - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+  #     - PROCESSOR_TYPE=category
+  #     - PROCESSOR_ID=housing
+  #     - CATEGORY_ID=housing
+  #     - ROOT_ID=basic-needs
+  #     - POLL_INTERVAL_SECONDS=${POLL_INTERVAL_SECONDS:-120}
+  #   restart: unless-stopped

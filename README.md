@@ -317,6 +317,10 @@ bash infrastructure/scripts/preflight-seed-dry-run.sh
 # then boot — see seeds/002-homelessness-la/config/dry-run/README.md
 ```
 
+### VPS / production deploy (stubs)
+
+Deployment is not fully specified yet. See [docs/deploy/README.md](docs/deploy/README.md) for open decisions, staging/production runbooks, and compose/env stubs.
+
 ### Vertical Slice Test
 
 ```bash
