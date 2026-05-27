@@ -240,6 +240,7 @@ services:
     environment:
       - CONFIG_PATH=/app/config.json
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - SEED_VIRTUAL_KEY=${SEED_VIRTUAL_KEY}

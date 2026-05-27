@@ -44,11 +44,11 @@ GOOGLE_API_KEY="$(read_env GOOGLE_API_KEY)"
 GEMINI_API_KEY="$(read_env GEMINI_API_KEY)"
 GITHUB_TOKEN="$(read_env GITHUB_TOKEN)"
 
-if [[ -n "$ANTHROPIC_API_KEY" ]]; then
-  upsert "ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY"
-elif [[ -n "$OPENROUTER_API_KEY" ]]; then
-  echo "WARN: ANTHROPIC_API_KEY unset; dry-run needs Anthropic Sonnet — add sk-ant key to infrastructure/.env"
+upsert "OPENROUTER_API_KEY" "${OPENROUTER_API_KEY:-}"
+if [[ -z "${OPENROUTER_API_KEY:-}" ]]; then
+  echo "WARN: OPENROUTER_API_KEY unset in Komatik env — dry-run needs it in infrastructure/.env"
 fi
+upsert "ANTHROPIC_API_KEY" "${ANTHROPIC_API_KEY:-}"
 
 upsert "OPENAI_API_KEY" "${OPENAI_API_KEY:-}"
 upsert "GOOGLE_API_KEY" "${GOOGLE_API_KEY:-${GEMINI_API_KEY:-}}"

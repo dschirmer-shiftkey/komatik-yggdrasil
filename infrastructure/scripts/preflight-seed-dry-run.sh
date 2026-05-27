@@ -17,6 +17,11 @@ warn() { echo "WARN: $*"; }
 fail() { echo "ERROR: $*"; errors=$((errors + 1)); }
 ok() { echo "OK: $*"; }
 
+read_env_file() {
+  local key="$1"
+  grep -E "^${key}=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' || true
+}
+
 echo "=== Seed 002 dry-run preflight ==="
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -33,30 +38,39 @@ if [[ ! -f "$ENV_FILE" ]]; then
   fail "Missing ${ENV_FILE} — run: cp infrastructure/.env.example infrastructure/.env"
 else
   ok "Found infrastructure/.env"
-  # shellcheck disable=SC1090
-  set -a && source "$ENV_FILE" && set +a
 
-  [[ -z "${POSTGRES_PASSWORD:-}" || "${POSTGRES_PASSWORD}" == "change-me-to-a-strong-password" ]] \
+  POSTGRES_PASSWORD="$(read_env_file POSTGRES_PASSWORD)"
+  OPENROUTER_API_KEY="$(read_env_file OPENROUTER_API_KEY)"
+  SUPABASE_URL="$(read_env_file SUPABASE_URL)"
+  SUPABASE_SERVICE_ROLE_KEY="$(read_env_file SUPABASE_SERVICE_ROLE_KEY)"
+  SEED_VIRTUAL_KEY="$(read_env_file SEED_VIRTUAL_KEY)"
+  SOURCE_ID="$(read_env_file SOURCE_ID)"
+  CATEGORY_ID="$(read_env_file CATEGORY_ID)"
+  ROOT_ID="$(read_env_file ROOT_ID)"
+
+  [[ -z "$POSTGRES_PASSWORD" || "$POSTGRES_PASSWORD" == "change-me-to-a-strong-password" ]] \
     && fail "Set POSTGRES_PASSWORD in infrastructure/.env"
 
-  [[ -z "${ANTHROPIC_API_KEY:-}" || "${ANTHROPIC_API_KEY}" == sk-ant-xxx ]] \
-    && fail "Set ANTHROPIC_API_KEY in infrastructure/.env (dry-run uses Sonnet via Anthropic only)"
+  if [[ -z "$OPENROUTER_API_KEY" || "$OPENROUTER_API_KEY" == sk-or-xxx ]]; then
+    fail "Set OPENROUTER_API_KEY in infrastructure/.env (dry-run routes LLM via OpenRouter)"
+  fi
 
-  [[ -z "${SUPABASE_URL:-}" || "${SUPABASE_URL}" == *"xxx"* ]] \
+  [[ -z "$SUPABASE_URL" || "$SUPABASE_URL" == *"xxx"* ]] \
     && fail "Set SUPABASE_URL in infrastructure/.env"
 
-  [[ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" || "${SUPABASE_SERVICE_ROLE_KEY}" == eyJ*your* ]] \
-    && fail "Set SUPABASE_SERVICE_ROLE_KEY in infrastructure/.env"
+  if [[ -z "$SUPABASE_SERVICE_ROLE_KEY" || "$SUPABASE_SERVICE_ROLE_KEY" == eyJ*your* ]]; then
+    fail "Set SUPABASE_SERVICE_ROLE_KEY in infrastructure/.env (save the file if you added it in the editor)"
+  fi
 
-  [[ -z "${SEED_VIRTUAL_KEY:-}" ]] && fail "Set SEED_VIRTUAL_KEY in infrastructure/.env"
+  [[ -z "$SEED_VIRTUAL_KEY" ]] && fail "Set SEED_VIRTUAL_KEY in infrastructure/.env"
 
-  if [[ "${SOURCE_ID:-}" != "002-homelessness-la" ]]; then
+  if [[ "$SOURCE_ID" != "002-homelessness-la" ]]; then
     warn "SOURCE_ID is '${SOURCE_ID:-}' — expected 002-homelessness-la for this dry-run"
   fi
-  if [[ "${CATEGORY_ID:-}" != "housing" ]]; then
+  if [[ "$CATEGORY_ID" != "housing" ]]; then
     warn "CATEGORY_ID is '${CATEGORY_ID:-}' — expected housing"
   fi
-  if [[ "${ROOT_ID:-}" != "basic-needs" ]]; then
+  if [[ "$ROOT_ID" != "basic-needs" ]]; then
     warn "ROOT_ID is '${ROOT_ID:-}' — expected basic-needs"
   fi
 

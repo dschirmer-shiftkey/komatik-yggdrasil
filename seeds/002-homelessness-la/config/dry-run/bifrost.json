@@ -1,16 +1,20 @@
 {
   "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
-  "_comment": "DRY-RUN Bifrost config for Seed 002. Caps monthly spend at $5, allows only Anthropic (no OpenAI/Google keys required). Mounted over the base template path by compose.dry-run.yaml.",
+  "_comment": "DRY-RUN Bifrost config for Seed 002. $5/mo cap; routes all LLM calls through OpenRouter (no direct Anthropic).",
   "server": {
     "port": 8080,
     "host": "0.0.0.0"
   },
   "providers": [
     {
-      "name": "anthropic",
-      "provider": "anthropic",
-      "apiKey": "${ANTHROPIC_API_KEY}",
-      "models": ["claude-sonnet-4-20250514"],
+      "name": "openrouter",
+      "provider": "openrouter",
+      "apiKey": "${OPENROUTER_API_KEY}",
+      "models": [
+        "google/gemini-2.0-flash-001",
+        "google/gemini-2.5-flash",
+        "openai/gpt-4o-mini"
+      ],
       "weight": 100
     }
   ],
@@ -23,13 +27,17 @@
         "maxRequestsPerMinute": 10,
         "maxTokensPerMinute": 40000
       },
-      "allowedModels": ["claude-sonnet-4-20250514"]
+      "allowedModels": [
+        "google/gemini-2.0-flash-001",
+        "google/gemini-2.5-flash",
+        "openai/gpt-4o-mini"
+      ]
     }
   ],
   "defaults": {
-    "model": "claude-sonnet-4-20250514",
+    "model": "google/gemini-2.0-flash-001",
     "maxRetries": 2,
-    "timeout": 60000
+    "timeout": 90000
   },
   "metrics": {
     "enabled": true,

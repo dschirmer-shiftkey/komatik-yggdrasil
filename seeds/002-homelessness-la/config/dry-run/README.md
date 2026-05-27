@@ -14,10 +14,10 @@ Bifrost, event-processor — against the live Yggdrasil Supabase, runs
 | Control | Value | Enforced by |
 |---|---|---|
 | Monthly spend cap | **$5** | [bifrost.json](bifrost.json) `virtualKeys.budget.maxCostPerMonth` |
-| Allowed models | **claude-sonnet-4-20250514 only** | [bifrost.json](bifrost.json) `providers[].models` + `allowedModels` |
+| Allowed models | **OpenRouter** `google/gemini-2.0-flash-001` (budget) | [bifrost.json](bifrost.json) |
 | Publisher | **Disabled** | [../compose.dry-run.yaml](../compose.dry-run.yaml) `publisher.replicas: 0` |
 | Cycle cadence | **~1 year** (= effectively single-cycle) | [../compose.dry-run.yaml](../compose.dry-run.yaml) `CYCLE_INTERVAL_MINUTES` |
-| Required credentials | `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` only | dry-run bifrost has no OpenAI/Google providers |
+| Required credentials | `OPENROUTER_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Bifrost → OpenRouter only |
 
 ## Pre-flight
 
@@ -26,7 +26,7 @@ config, and optional offline smoke tests):
 
 ```bash
 cp infrastructure/.env.example infrastructure/.env
-# Edit infrastructure/.env — POSTGRES_PASSWORD, ANTHROPIC_API_KEY,
+# Edit infrastructure/.env — POSTGRES_PASSWORD, OPENROUTER_API_KEY,
 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_VIRTUAL_KEY
 
 bash infrastructure/scripts/preflight-seed-dry-run.sh
