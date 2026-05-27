@@ -68,8 +68,8 @@ services:
   # Knowledge event processor — validates seed findings, promotes to root
   event-processor:
     build:
-      context: ../../infrastructure/event-processor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: event-processor/Dockerfile
     container_name: housing-event-processor
     environment:
       - SUPABASE_URL=${SUPABASE_URL}

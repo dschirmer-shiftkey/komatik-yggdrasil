@@ -91,8 +91,8 @@ services:
   #         collaboration_required (root-vs-root), signal_routed
   event-processor:
     build:
-      context: ./event-processor
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: event-processor/Dockerfile
     container_name: apex-event-processor
     environment:
       - SUPABASE_URL=${SUPABASE_URL}

@@ -1,0 +1,36 @@
+# systemd unit stub — Seed 002 Docker Compose stack
+#
+# Install (TODO: adjust paths and user):
+#   sudo cp infrastructure/deploy/systemd/cairn-seed-002.service.example \
+#          /etc/systemd/system/cairn-seed-002.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable cairn-seed-002
+#   sudo systemctl start cairn-seed-002
+#
+# See docs/deploy/vps-staging.md
+
+[Unit]
+Description=Cairn Seed 002 (Homelessness LA) Docker Compose stack
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=TODO-deploy-user
+Group=docker
+WorkingDirectory=/opt/cairn
+
+# TODO: staging profile (dry-run):
+Environment=COMPOSE_FILE=infrastructure/compose.yaml:seeds/002-homelessness-la/config/compose.override.yaml:seeds/002-homelessness-la/config/compose.dry-run.yaml
+
+# TODO: production profile — replace COMPOSE_FILE with compose.prod.yaml when ready:
+# Environment=COMPOSE_FILE=infrastructure/compose.yaml:seeds/002-homelessness-la/config/compose.override.yaml:seeds/002-homelessness-la/config/compose.prod.yaml
+
+ExecStart=/usr/bin/docker compose --project-directory infrastructure up -d --remove-orphans
+ExecStop=/usr/bin/docker compose --project-directory infrastructure down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
