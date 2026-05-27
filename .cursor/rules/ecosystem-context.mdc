@@ -79,6 +79,6 @@ The komatik-agents hub tracks Yggdrasil via these files:
 
 - Stack has never been `docker compose up`'d end-to-end — first live run is the next milestone
 - VPS deployment waits on hosting setup (DNS + Docker host)
-- DNS for yggdrasil.komatik.xyz not yet configured
+- Cairn world-tree Supabase: dedicated project `aiszfddbzrhksqkaxmur` (legacy Yggdrasil DB retired)
 - First live run needs real API keys configured in .env
 - Test coverage is minimal (smoke tests only) — no functional or integration tests

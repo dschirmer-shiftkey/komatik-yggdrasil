@@ -32,5 +32,5 @@ task_profiles:
   - technical_writing
   - report_generation
 
-preferred_model: claude-sonnet-4-20250514
+preferred_model: openrouter/google/gemini-2.0-flash-001
 max_tokens_per_session: 6000

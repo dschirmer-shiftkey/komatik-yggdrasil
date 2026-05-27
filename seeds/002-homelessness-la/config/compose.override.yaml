@@ -10,61 +10,88 @@
 # Bind-mount paths below are relative to the project directory
 # (--project-directory infrastructure), so `../seeds/...` resolves to
 # repo_root/seeds/...
+#
+# volumes: !override replaces the base `mission` named volume with the seed
+# directory bind-mount (file-in-volume mounts fail on Docker Desktop/WSL).
 
 services:
   agent-mission:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/mission.md:/workspace/souls/mission.md:ro
       - ../seeds/002-homelessness-la/config/agents/mission.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   agent-research:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/research.md:/workspace/souls/research.md:ro
       - ../seeds/002-homelessness-la/config/agents/research.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   agent-analysis:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/analysis.md:/workspace/souls/analysis.md:ro
       - ../seeds/002-homelessness-la/config/agents/analysis.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   agent-prototype:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/prototype.md:/workspace/souls/prototype.md:ro
       - ../seeds/002-homelessness-la/config/agents/prototype.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   agent-documentation:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/documentation.md:/workspace/souls/documentation.md:ro
       - ../seeds/002-homelessness-la/config/agents/documentation.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   agent-community:
     environment:
       - SEED_NAME=Homelessness LA
-    volumes:
-      - ../seeds/002-homelessness-la/MISSION.md:/workspace/mission/MISSION.md:ro
+    volumes: !override
+      - workspace:/workspace
+      - output:/workspace/output
+      - ../seeds/002-homelessness-la:/workspace/mission:ro
+      - ./config/context-budget.yaml:/workspace/config/context-budget.yaml:ro
+      - ./config/agent-capacity.yaml:/workspace/config/agent-capacity.yaml:ro
+      - ../categories/housing:/workspace/category:ro
       - ./agent/souls/community.md:/workspace/souls/community.md:ro
       - ../seeds/002-homelessness-la/config/agents/community.yaml:/workspace/config/agent.yaml:ro
-      - ../categories/housing:/workspace/category:ro
 
   publisher:
     environment:

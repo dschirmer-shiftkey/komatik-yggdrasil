@@ -14,19 +14,25 @@ Bifrost, event-processor — against the live Yggdrasil Supabase, runs
 | Control | Value | Enforced by |
 |---|---|---|
 | Monthly spend cap | **$5** | [bifrost.json](bifrost.json) `virtualKeys.budget.maxCostPerMonth` |
-| Allowed models | **claude-sonnet-4-20250514 only** | [bifrost.json](bifrost.json) `providers[].models` + `allowedModels` |
+| Allowed models | **OpenRouter** `google/gemini-2.0-flash-001` (budget) | [bifrost.json](bifrost.json) |
 | Publisher | **Disabled** | [../compose.dry-run.yaml](../compose.dry-run.yaml) `publisher.replicas: 0` |
 | Cycle cadence | **~1 year** (= effectively single-cycle) | [../compose.dry-run.yaml](../compose.dry-run.yaml) `CYCLE_INTERVAL_MINUTES` |
-| Required credentials | `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` only | dry-run bifrost has no OpenAI/Google providers |
+| Required credentials | `OPENROUTER_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Bifrost → OpenRouter only |
 
 ## Pre-flight
 
-Verify `infrastructure/.env` has the two required keys. GITHUB_TOKEN can
-be empty (publisher is off).
+From repo root, run the preflight script (checks Docker, `.env`, compose
+config, and optional offline smoke tests):
 
 ```bash
-grep -E "^(ANTHROPIC|SUPABASE_SERVICE)" infrastructure/.env
+cp infrastructure/.env.example infrastructure/.env
+# Edit infrastructure/.env — POSTGRES_PASSWORD, OPENROUTER_API_KEY,
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_VIRTUAL_KEY
+
+bash infrastructure/scripts/preflight-seed-dry-run.sh
 ```
+
+GITHUB_TOKEN can be empty (publisher is off).
 
 ## Boot
 
@@ -126,6 +132,34 @@ stop independent of aborting manually.
 - Any workflow step stuck `running` for > 30 minutes
 - Mission agent output has no parseable `{"approved": ...}` JSON block
 - Bifrost logs repeated 5xx errors
+
+## Clean duplicate workflows
+
+If the scheduler restarted and left multiple `research-cycle-*` rows,
+keep one workflow (newest completed by default) and delete the rest:
+
+```bash
+bash infrastructure/scripts/clean-seed-workflows.sh
+# Or keep a specific UUID:
+bash infrastructure/scripts/clean-seed-workflows.sh --keep-id <uuid>
+```
+
+## Bifrost (dry-run)
+
+Bifrost v1.5 reads **`/app/data/config.json`**, not `/app/config.json`.
+The seed entrypoint writes the templated dry-run config there and clears
+`config.db` when `BIFROST_RESET_CONFIG=true` so OpenRouter keys from
+`bifrost.json` load correctly. Agents use `BIFROST_API_KEY=${SEED_VIRTUAL_KEY}`
+(no direct OpenRouter bypass).
+
+Smoke test from the host:
+
+```bash
+curl -s -X POST http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $SEED_VIRTUAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openrouter/google/gemini-2.0-flash-001","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+```
 
 ## Tear down (after success)
 

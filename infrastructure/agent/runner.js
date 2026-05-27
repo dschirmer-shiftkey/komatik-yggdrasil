@@ -271,7 +271,55 @@ function writeArtifact(stepTask, content) {
 
 // ── Bifrost LLM integration ────────────────────────────────────────────
 
+/** Dry-run fallback when Bifrost config_store does not load OpenRouter keys. */
+async function callOpenRouterDirect(systemPrompt, userPrompt, opts = {}) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is required for BIFROST_USE_OPENROUTER_DIRECT");
+  }
+
+  let model = opts.model || "google/gemini-2.0-flash-001";
+  if (model.startsWith("openrouter/")) {
+    model = model.slice("openrouter/".length);
+  }
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: opts.maxTokens || 4096,
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text();
+    throw new Error(`OpenRouter error ${res.status}: ${errBody}`);
+  }
+
+  const data = await res.json();
+  const usage = data.usage || {};
+  return {
+    content: data.choices?.[0]?.message?.content || "",
+    inputTokens: usage.prompt_tokens || 0,
+    outputTokens: usage.completion_tokens || 0,
+    costUsd: usage.cost || 0,
+    model: data.model || model,
+  };
+}
+
 async function callBifrost(systemPrompt, userPrompt, opts = {}) {
+  if (process.env.BIFROST_USE_OPENROUTER_DIRECT === "true") {
+    return callOpenRouterDirect(systemPrompt, userPrompt, opts);
+  }
+
   const headers = { "Content-Type": "application/json" };
   if (BIFROST_API_KEY) {
     headers["Authorization"] = `Bearer ${BIFROST_API_KEY}`;
