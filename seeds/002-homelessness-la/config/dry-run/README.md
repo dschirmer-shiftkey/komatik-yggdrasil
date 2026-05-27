@@ -21,12 +21,18 @@ Bifrost, event-processor — against the live Yggdrasil Supabase, runs
 
 ## Pre-flight
 
-Verify `infrastructure/.env` has the two required keys. GITHUB_TOKEN can
-be empty (publisher is off).
+From repo root, run the preflight script (checks Docker, `.env`, compose
+config, and optional offline smoke tests):
 
 ```bash
-grep -E "^(ANTHROPIC|SUPABASE_SERVICE)" infrastructure/.env
+cp infrastructure/.env.example infrastructure/.env
+# Edit infrastructure/.env — POSTGRES_PASSWORD, ANTHROPIC_API_KEY,
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SEED_VIRTUAL_KEY
+
+bash infrastructure/scripts/preflight-seed-dry-run.sh
 ```
+
+GITHUB_TOKEN can be empty (publisher is off).
 
 ## Boot
 

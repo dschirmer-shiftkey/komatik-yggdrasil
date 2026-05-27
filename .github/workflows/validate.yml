@@ -105,10 +105,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Build all service images
+      - name: Build base seed stack images
         run: |
           cd infrastructure
-          docker compose build --no-cache 2>&1 | tail -20
+          docker compose build 2>&1 | tail -20
+
+      - name: Build apex stack images (event-processor, signal-aggregator)
+        run: |
+          docker compose --project-directory infrastructure \
+            -f infrastructure/compose.yaml \
+            -f apex/config/compose.override.yaml \
+            build event-processor signal-aggregator bifrost 2>&1 | tail -20
 
   packages:
     name: Verify Node Dependencies
@@ -140,3 +147,46 @@ jobs:
           else
             echo "No tests for ${{ matrix.service }}"
           fi
+
+  compose-config:
+    name: Validate Compose Stacks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Seed 002 dry-run stack
+        run: |
+          docker compose --project-directory infrastructure \
+            -f infrastructure/compose.yaml \
+            -f seeds/002-homelessness-la/config/compose.override.yaml \
+            -f seeds/002-homelessness-la/config/compose.dry-run.yaml \
+            config --quiet
+
+      - name: Apex HQ stack
+        run: |
+          docker compose --project-directory infrastructure \
+            -f infrastructure/compose.yaml \
+            -f apex/config/compose.override.yaml \
+            config --quiet
+
+  smoke:
+    name: World Tree Smoke Tests (dry-run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install script dependencies
+        working-directory: infrastructure/scripts
+        run: npm ci
+
+      - name: Apex cycle smoke (offline)
+        working-directory: infrastructure/scripts
+        run: npm run test:apex-cycle:dry
+
+      - name: Vertical slice smoke (offline)
+        working-directory: infrastructure/scripts
+        run: npm run test:vertical-slice:dry

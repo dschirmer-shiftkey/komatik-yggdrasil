@@ -305,6 +305,16 @@ docker compose --project-directory infrastructure \
 ```bash
 cd infrastructure/agent  && npm ci && npm test   # context assembler, decisions
 cd infrastructure/gateway && npm ci && npm test   # RBAC, tool registry
+cd infrastructure/scripts && npm ci && npm run test:apex-cycle:dry
+cd infrastructure/scripts && npm run test:vertical-slice:dry
+```
+
+### Seed 002 dry-run (first live cycle)
+
+```bash
+cp infrastructure/.env.example infrastructure/.env   # fill keys
+bash infrastructure/scripts/preflight-seed-dry-run.sh
+# then boot — see seeds/002-homelessness-la/config/dry-run/README.md
 ```
 
 ### Vertical Slice Test
