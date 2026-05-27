@@ -4,8 +4,8 @@
 # and the seed override to:
 #   - Disable the publisher (no GitHub pushes)
 #   - Cap the next cycle interval at one year (effectively single-cycle)
-#   - Mount the dry-run Bifrost config ($5 cap, OpenRouter only)
-#   - Mount dry-run agent YAMLs (OpenRouter google/gemini-2.0-flash-001)
+#   - Mount the dry-run Bifrost config (OpenRouter only)
+#   - Mount dry-run agent YAMLs (openrouter/google/gemini-2.0-flash-001)
 #
 # Boot (from repo root):
 #   docker compose --project-directory infrastructure \
@@ -16,22 +16,24 @@
 # See seeds/002-homelessness-la/config/dry-run/README.md for the runbook.
 
 services:
-  # Publisher OFF — no GitHub pushes during dry-run.
   publisher:
     deploy:
       replicas: 0
 
-  # Scheduler: run one cycle on boot, then effectively pause.
-  # (CYCLE_INTERVAL_MINUTES=525960 ≈ 1 year; the first runCycle() fires
-  # immediately on startup before the interval kicks in.)
   scheduler:
     environment:
       - CYCLE_INTERVAL_MINUTES=525960
 
-  # Bifrost: $5 cap, OpenRouter only (OPENROUTER_API_KEY in infrastructure/.env).
   bifrost:
     volumes:
       - ../seeds/002-homelessness-la/config/dry-run/bifrost.json:/app/config.template.json:ro
+    environment: !override
+      - CONFIG_PATH=/app/data/config.json
+      - CONFIG_TEMPLATE_PATH=/app/config.template.json
+      - BIFROST_RESET_CONFIG=true
+      - BIFROST_BOOTSTRAP=false
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SEED_VIRTUAL_KEY=${SEED_VIRTUAL_KEY}
 
   agent-mission:
     volumes:

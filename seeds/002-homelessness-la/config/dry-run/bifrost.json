@@ -1,55 +1,25 @@
 {
-  "$schema": "https://raw.githubusercontent.com/maximhq/bifrost/main/config.schema.json",
-  "_comment": "DRY-RUN Bifrost config for Seed 002. $5/mo cap; routes all LLM calls through OpenRouter (no direct Anthropic).",
-  "server": {
-    "port": 8080,
-    "host": "0.0.0.0"
+  "$schema": "https://www.getbifrost.ai/schema",
+  "client": {
+    "drop_excess_requests": false
   },
-  "providers": [
-    {
-      "name": "openrouter",
-      "provider": "openrouter",
-      "apiKey": "${OPENROUTER_API_KEY}",
-      "models": [
-        "google/gemini-2.0-flash-001",
-        "google/gemini-2.5-flash",
-        "openai/gpt-4o-mini"
-      ],
-      "weight": 100
-    }
-  ],
-  "virtualKeys": [
-    {
-      "name": "seed-002-homelessness-la-dry-run",
-      "key": "${SEED_VIRTUAL_KEY}",
-      "budget": {
-        "maxCostPerMonth": 5.00,
-        "maxRequestsPerMinute": 10,
-        "maxTokensPerMinute": 40000
-      },
-      "allowedModels": [
-        "google/gemini-2.0-flash-001",
-        "google/gemini-2.5-flash",
-        "openai/gpt-4o-mini"
+  "providers": {
+    "openrouter": {
+      "keys": [
+        {
+          "name": "openrouter-dry-run",
+          "value": "${OPENROUTER_API_KEY}",
+          "models": ["*"],
+          "weight": 1.0
+        }
       ]
     }
-  ],
-  "defaults": {
-    "model": "google/gemini-2.0-flash-001",
-    "maxRetries": 2,
-    "timeout": 90000
   },
-  "metrics": {
+  "config_store": {
     "enabled": true,
-    "prometheus": {
-      "enabled": true,
-      "port": 9090
+    "type": "sqlite",
+    "config": {
+      "path": "./data/config.db"
     }
-  },
-  "logging": {
-    "level": "info",
-    "requestLogging": true,
-    "includeTokenCounts": true,
-    "includeCost": true
   }
 }

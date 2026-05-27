@@ -312,6 +312,25 @@ async function runCycle() {
   }
 }
 
+async function resumeRunningWorkflow() {
+  const running = await pool.query(
+    "SELECT id, name, status FROM workflows WHERE status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1"
+  );
+  if (running.rows.length === 0) return false;
+
+  const { id, name, status } = running.rows[0];
+  console.log(`[scheduler] Resuming monitor for workflow '${name}' (${id})`);
+  if (status === "pending") {
+    await pool.query(
+      "UPDATE workflows SET status = 'running', updated_at = now() WHERE id = $1",
+      [id]
+    );
+  }
+  const result = await monitorWorkflow(id);
+  console.log(`[scheduler] Resumed workflow finished: ${result}`);
+  return true;
+}
+
 async function main() {
   console.log(`[scheduler] Starting with ${CYCLE_INTERVAL_MS / 60000}-minute cycle interval`);
   console.log(`[scheduler] Cycle steps: ${CYCLE_STEPS.map((step) => step.agent_id).join(" → ")}`);
@@ -319,7 +338,10 @@ async function main() {
   await waitForGateway();
   console.log(`[scheduler] Gateway is healthy`);
 
-  await runCycle();
+  const resumed = await resumeRunningWorkflow();
+  if (!resumed) {
+    await runCycle();
+  }
 
   setInterval(runCycle, CYCLE_INTERVAL_MS);
 

@@ -16,8 +16,8 @@
 
 x-agent-common: &agent-common
   build:
-    context: ./agent
-    dockerfile: Dockerfile
+    context: .
+    dockerfile: agent/Dockerfile
   depends_on:
     gateway:
       condition: service_healthy
@@ -238,7 +238,7 @@ services:
     volumes:
       - ./bifrost/config.template.json:/app/config.template.json:ro
     environment:
-      - CONFIG_PATH=/app/config.json
+      - CONFIG_PATH=/app/data/config.json
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}

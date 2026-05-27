@@ -133,6 +133,34 @@ stop independent of aborting manually.
 - Mission agent output has no parseable `{"approved": ...}` JSON block
 - Bifrost logs repeated 5xx errors
 
+## Clean duplicate workflows
+
+If the scheduler restarted and left multiple `research-cycle-*` rows,
+keep one workflow (newest completed by default) and delete the rest:
+
+```bash
+bash infrastructure/scripts/clean-seed-workflows.sh
+# Or keep a specific UUID:
+bash infrastructure/scripts/clean-seed-workflows.sh --keep-id <uuid>
+```
+
+## Bifrost (dry-run)
+
+Bifrost v1.5 reads **`/app/data/config.json`**, not `/app/config.json`.
+The seed entrypoint writes the templated dry-run config there and clears
+`config.db` when `BIFROST_RESET_CONFIG=true` so OpenRouter keys from
+`bifrost.json` load correctly. Agents use `BIFROST_API_KEY=${SEED_VIRTUAL_KEY}`
+(no direct OpenRouter bypass).
+
+Smoke test from the host:
+
+```bash
+curl -s -X POST http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer $SEED_VIRTUAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"openrouter/google/gemini-2.0-flash-001","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+```
+
 ## Tear down (after success)
 
 ```bash

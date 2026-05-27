@@ -4,10 +4,17 @@ WORKDIR /app
 
 RUN apk add --no-cache bash curl git postgresql-client
 
-COPY package.json package-lock.json* ./
-RUN npm ci --production
+# file:../shared requires the sibling package at build time
+COPY shared /shared
+COPY agent/package.json agent/package-lock.json* ./
+RUN cd /shared && npm ci --omit=dev
+# Copy shared into node_modules (Windows lockfiles symlink to host paths that break in Linux).
+RUN npm ci --omit=dev \
+    && rm -rf node_modules/@komatik \
+    && mkdir -p node_modules/@komatik \
+    && cp -a /shared node_modules/@komatik/shared
 
-COPY . .
+COPY agent/ .
 
 RUN mkdir -p /workspace/output /workspace/context/.circuit-breaker \
     && chown -R node:node /workspace
