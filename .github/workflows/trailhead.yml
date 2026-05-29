@@ -21,7 +21,7 @@ jobs:
     name: Deployment Gate
     runs-on: ubuntu-latest
     steps:
-      - uses: KomatikAI/trailhead@v4.3.0
+      - uses: KomatikAI/trailhead@v4.3.3
         id: gate
         with:
           risk-threshold: "80"
