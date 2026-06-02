@@ -1,0 +1,39 @@
+# Backstage catalog-info.yaml — Cairn (consumer-surface).
+# Org pattern: separate by bounded context, unify by platform contract (v3 engine).
+# Structural source of truth: KomatikAI/komatik docs/org-context-map.md §4.
+# Generated from docs/catalog/satellite-template.yaml.
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: cairn
+  title: "Cairn"
+  description: >-
+    Pledge-1%-compute / charitable arm. Binds platform identity; runs constrained seedling agents.
+  tags: [consumer-surface]
+spec:
+  owner: komatik
+  domain: komatik-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: cairn
+  title: "Cairn"
+  description: >-
+    Pledge-1%-compute / charitable arm. Binds platform identity; runs constrained seedling agents.
+  tags:
+    - consumer-surface
+  annotations:
+    komatik.xyz/bounded-context: pledge-compute
+    komatik.xyz/integration: consumer-surface
+  links:
+    - url: https://github.com/KomatikAI/cairn
+      title: Repo
+spec:
+  type: service
+  lifecycle: experimental
+  owner: komatik
+  system: cairn
+  consumesApis: [identity]
